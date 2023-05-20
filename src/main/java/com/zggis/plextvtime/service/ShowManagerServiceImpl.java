@@ -40,6 +40,7 @@ public class ShowManagerServiceImpl implements ShowManagerService {
                     throw new RuntimeException(e);
                 } catch (TVTimeException e) {
                     log.error("Unable to authenticate with TVTime, please check your credentials.");
+                    log.error(e.getMessage(), e);
                     System.exit(1);
                 }
             }
@@ -68,22 +69,24 @@ public class ShowManagerServiceImpl implements ShowManagerService {
         if (StringUtils.hasText(episodeId)) {
             String result = null;
             //Need to attempt this in a loop with diminishing delays. After failure threshold is reached throw the exception
-            try {
-                result = tvTimeService.watchEpisode(episodeId);
-            } catch (TVTimeException e) {
-                delay();
-                tvTimeService.login();
-                delay();
-                result = tvTimeService.watchEpisode(episodeId);
+            for (int i = 1; i <= 5; i++) {
+                try {
+                    result = tvTimeService.watchEpisode(episodeId);
+                    break;
+                } catch (TVTimeException e) {
+                    delay(3000 * i);
+                    tvTimeService.login();
+                    delay(3000 * i);
+                }
             }
             log.debug(result);
             log.info("{} S{}E{} - {}, was successfully marked as watched", webhook.metadata.grandparentTitle, webhook.metadata.parentIndex, webhook.metadata.index, webhook.metadata.title);
         }
     }
 
-    private void delay() {
+    private void delay(int millis) {
         try {
-            Thread.sleep(3000);
+            Thread.sleep(millis);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
