@@ -8,9 +8,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication
 public class PlexTvtimeApplication {
 
-    @Autowired
-    private TVTimeServiceImpl svc;
-
     public static void main(String[] args) {
         SpringApplication.run(PlexTvtimeApplication.class, args);
     }

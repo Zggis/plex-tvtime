@@ -200,10 +200,15 @@ public class TVTimeServiceImpl implements TVTimeService {
         this.cookies.clear();
         MultiValueMap<String, String> payloadCookies = mono.block();
         if (payloadCookies != null) {
+            payloadCookies.forEach((k, v) ->
+                    {
+                        if ("tvstRemember".equals(k) || "symfony".equals(k))
+                            this.cookies.put(k, parseParam(v.toString()));
+                    }
+            );
             if (!this.cookies.containsKey("tvstRemember") || !this.cookies.containsKey("symfony")) {
                 throw new TVTimeException("Your TV Time credentials are invalid");
             }
-            updateCookies(payloadCookies);
             log.info("Login Successful");
         }
     }
