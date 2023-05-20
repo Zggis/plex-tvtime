@@ -18,7 +18,7 @@ public interface TVTimeService {
 
     String getUserId();
 
-    record Show(String tvdbId, String imageUrl, String name) {
+    record Show(String name, String tvdbId, String imageUrl) {
         @Override
         public boolean equals(Object o) {
             Show show = (Show) o;

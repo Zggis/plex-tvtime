@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.util.StringUtils;
@@ -93,9 +94,10 @@ public class TVTimeServiceImpl implements TVTimeService {
             Elements items = doc.select("div.show");
             for (Element element : items) {
                 shows.add(new Show(
+                        element.selectFirst("img").attr("alt").trim(),
                         element.selectFirst("a").attr("href").replace("/en/show/", ""),
-                        element.selectFirst("img").attr("src"),
-                        element.selectFirst("img").attr("alt")));
+                        element.selectFirst("img").attr("src")
+                ));
             }
             log.info("Fetched {} shows", shows.size());
         } catch (IOException e) {
@@ -122,7 +124,7 @@ public class TVTimeServiceImpl implements TVTimeService {
 
             for (Element element : items) {
                 episodes.add(new Episode(
-                        element.selectFirst("a").attr("href").replace("/en/show/81189/episode/", ""),
+                        element.selectFirst("a").attr("href").replace("/en/show/" + tvdbId + "/episode/", ""),
                         element.selectFirst("span.episode-name").text().trim(),
                         element.selectFirst("span.episode-air-date").text().trim()));
             }
@@ -163,15 +165,17 @@ public class TVTimeServiceImpl implements TVTimeService {
     }
 
     private void updateCookies(MultiValueMap<String, String> newCookies) throws TVTimeException {
-        newCookies.forEach((k, v) ->
-                {
-                    if ("tvstRemember".equals(k) || "symfony".equals(k))
-                        this.cookies.put(k, parseParam(v.toString()));
-                }
-        );
-        log.debug("Cookies updated : [tvstRemember={};symfony={}]", this.cookies.get("tvstRemember"), this.cookies.get("symfony"));
-        if (!StringUtils.hasText(cookies.get("tvstRemember")) || "deleted".equals(cookies.get("tvstRemember"))) {
-            throw new TVTimeException("Session has expired, you must login again");
+        if (!CollectionUtils.isEmpty(newCookies)) {
+            newCookies.forEach((k, v) ->
+                    {
+                        if ("tvstRemember".equals(k) || "symfony".equals(k))
+                            this.cookies.put(k, parseParam(v.toString()));
+                    }
+            );
+            log.debug("Cookies updated : [tvstRemember={};symfony={}]", this.cookies.get("tvstRemember"), this.cookies.get("symfony"));
+            if (!StringUtils.hasText(cookies.get("tvstRemember")) || "deleted".equals(cookies.get("tvstRemember"))) {
+                throw new TVTimeException("Session has expired, you must login again");
+            }
         }
     }
 
