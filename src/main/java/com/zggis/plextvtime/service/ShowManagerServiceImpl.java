@@ -10,6 +10,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+
 @Component
 @NoArgsConstructor
 @Slf4j
@@ -18,13 +21,44 @@ public class ShowManagerServiceImpl implements ShowManagerService {
     @Autowired
     private TVTimeService tvTimeService;
 
+    private BlockingQueue<PlexWebhook> queue = new LinkedBlockingQueue<>();
+
     @PostConstruct
     public void init() {
         log.info("Show manager running!");
+        Thread t1 = new Thread(new WebhookProcessor());
+        t1.start();
+    }
+
+    private class WebhookProcessor implements Runnable {
+
+        public void run() {
+            while (true) {
+                try {
+                    processWebhook(queue.take());
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                } catch (TVTimeException e) {
+                    log.error("Unable to authenticate with TVTime, please check your credentials.");
+                    System.exit(1);
+                }
+            }
+        }
     }
 
     @Override
     public void markAsWatched(PlexWebhook webhook) {
+        synchronized (queue) {
+            try {
+                queue.put(webhook);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    private void processWebhook(PlexWebhook webhook) throws TVTimeException {
+        log.info("Processing webhook for {} S{}E{} - {}", webhook.metadata.grandparentTitle, webhook.metadata.parentIndex, webhook.metadata.index, webhook.metadata.title);
         String episodeId = null;
         for (Guid guid : webhook.metadata.guid) {
             if (guid.id.contains("tvdb")) {
@@ -33,6 +67,7 @@ public class ShowManagerServiceImpl implements ShowManagerService {
         }
         if (StringUtils.hasText(episodeId)) {
             String result = null;
+            //Need to attempt this in a loop with diminishing delays. After failure threshold is reached throw the exception
             try {
                 result = tvTimeService.watchEpisode(episodeId);
             } catch (TVTimeException e) {
@@ -42,7 +77,7 @@ public class ShowManagerServiceImpl implements ShowManagerService {
                 result = tvTimeService.watchEpisode(episodeId);
             }
             log.debug(result);
-            log.debug("{} S{}E{} - {}, was successfully marked as watched", webhook.metadata.grandparentTitle, webhook.metadata.parentIndex, webhook.metadata.index, webhook.metadata.title);
+            log.info("{} S{}E{} - {}, was successfully marked as watched", webhook.metadata.grandparentTitle, webhook.metadata.parentIndex, webhook.metadata.index, webhook.metadata.title);
         }
     }
 
