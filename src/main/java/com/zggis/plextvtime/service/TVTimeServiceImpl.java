@@ -5,8 +5,6 @@ import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -22,7 +20,8 @@ import reactor.util.function.Tuple2;
 import reactor.util.function.Tuples;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 
 @Component
 @Slf4j
@@ -39,8 +38,6 @@ public class TVTimeServiceImpl implements TVTimeService {
     private final WebClient client;
 
     private String userId;
-
-    private String avatarImgUrl;
 
     public TVTimeServiceImpl() {
         client = WebClient.builder()
@@ -75,63 +72,6 @@ public class TVTimeServiceImpl implements TVTimeService {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    @Override
-    public Set<Show> getShows() throws TVTimeException {
-        if (!isLoggedIn())
-            throw new TVTimeException("You are not logged in");
-        Document doc;
-        Set<Show> shows = new HashSet<>();
-        try {
-            doc = Jsoup.connect("https://www.tvtime.com/en/user/" + userId + "/profile")
-                    .cookie("tvstRemember", cookies.get("tvstRemember"))
-                    .cookie("symfony", cookies.get("symfony"))
-                    .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
-                    .header("Accept-Language", "*")
-                    .get();
-            avatarImgUrl = doc.selectFirst("div.profile-nav").selectFirst("img").attr("src");
-            Elements items = doc.select("div.show");
-            for (Element element : items) {
-                shows.add(new Show(
-                        element.selectFirst("img").attr("alt").trim(),
-                        element.selectFirst("a").attr("href").replace("/en/show/", ""),
-                        element.selectFirst("img").attr("src")
-                ));
-            }
-            log.info("Fetched {} shows", shows.size());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        return shows;
-    }
-
-    @Override
-    public Set<Episode> getEpisodes(String tvdbId) throws TVTimeException {
-        if (!isLoggedIn())
-            throw new TVTimeException("You are not logged in");
-        Document doc;
-        Set<Episode> episodes = new HashSet<>();
-        try {
-            doc = Jsoup.connect("https://www.tvtime.com/en/show/" + tvdbId)
-                    .cookie("tvstRemember", cookies.get("tvstRemember"))
-                    .cookie("symfony", cookies.get("symfony"))
-                    .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
-                    .header("Accept-Language", "*")
-                    .get();
-
-            Elements items = doc.select("li.episode-wrapper");
-
-            for (Element element : items) {
-                episodes.add(new Episode(
-                        element.selectFirst("a").attr("href").replace("/en/show/" + tvdbId + "/episode/", ""),
-                        element.selectFirst("span.episode-name").text().trim(),
-                        element.selectFirst("span.episode-air-date").text().trim()));
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        return episodes;
     }
 
     @Override
@@ -223,11 +163,6 @@ public class TVTimeServiceImpl implements TVTimeService {
             return param.substring(param.indexOf('=') + 1, param.indexOf(';'));
         }
         return null;
-    }
-
-    @Override
-    public String getAvatarImgUrl() {
-        return avatarImgUrl;
     }
 
     @Override
