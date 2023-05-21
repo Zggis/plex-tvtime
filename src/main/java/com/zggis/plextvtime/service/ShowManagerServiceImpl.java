@@ -25,7 +25,17 @@ public class ShowManagerServiceImpl implements ShowManagerService {
     @Value("${plex.user.list}")
     private String plexUserList;
 
+    @Value("${plex.shows.exclude}")
+    private String excludedShowList;
+
+    @Value("${plex.shows.include}")
+    private String includeShowList;
+
     private final Set<String> plexUsers = new HashSet<>();
+
+    private final Set<String> excludedShows = new HashSet<>();
+
+    private final Set<String> includedShows = new HashSet<>();
 
     @Autowired
     private TVTimeService tvTimeService;
@@ -37,9 +47,17 @@ public class ShowManagerServiceImpl implements ShowManagerService {
         for (String user : plexUserList.split(",")) {
             plexUsers.add(user.toLowerCase());
         }
+        if (StringUtils.hasText(excludedShowList))
+            for (String show : excludedShowList.split(",")) {
+                excludedShows.add(show.toLowerCase());
+            }
+        if (StringUtils.hasText(includeShowList))
+            for (String show : includeShowList.split(",")) {
+                includedShows.add(show.toLowerCase());
+            }
         Thread t1 = new Thread(new WebhookProcessor());
         t1.start();
-        log.info("Show manager running!");
+        log.info("Show manager running");
     }
 
     private class WebhookProcessor implements Runnable {
@@ -79,10 +97,23 @@ public class ShowManagerServiceImpl implements ShowManagerService {
             log.info("Ignoring webhook for library type '{}', only type 'show' will be processed", webhook.metadata.librarySectionType);
             return;
         }
+        if (!excludedShows.isEmpty()) {
+            if (excludedShows.contains(webhook.metadata.grandparentTitle.toLowerCase())) {
+                log.info("Ignoring webhook for show '{}', its in the excluded list", webhook.metadata.grandparentTitle);
+                return;
+            }
+        } else if (!includedShows.isEmpty()) {
+            if (!includedShows.contains(webhook.metadata.grandparentTitle.toLowerCase())) {
+                log.info("Ignoring webhook for show '{}', its not in the included list", webhook.metadata.grandparentTitle);
+                return;
+            }
+        }
         if (!webhook.event.equals("media.scrobble")) {
             log.info("Ignoring webhook for event type '{}', only type media.scrobble will be processed", webhook.event);
             return;
         }
+
+
         log.info("Processing webhook for {} S{}E{} - {}", webhook.metadata.grandparentTitle, webhook.metadata.parentIndex, webhook.metadata.index, webhook.metadata.title);
         String episodeId = null;
         for (Guid guid : webhook.metadata.guid) {
