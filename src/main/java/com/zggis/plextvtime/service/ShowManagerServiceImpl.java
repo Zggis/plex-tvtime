@@ -7,9 +7,14 @@ import jakarta.annotation.PostConstruct;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
+import org.springframework.web.reactive.function.client.WebClientRequestException;
 
+import java.net.SocketException;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -18,6 +23,11 @@ import java.util.concurrent.LinkedBlockingQueue;
 @Slf4j
 public class ShowManagerServiceImpl implements ShowManagerService {
 
+    @Value("${plex.user.list}")
+    private String plexUserList;
+
+    private Set<String> plexUsers = new HashSet<>();
+
     @Autowired
     private TVTimeService tvTimeService;
 
@@ -25,9 +35,12 @@ public class ShowManagerServiceImpl implements ShowManagerService {
 
     @PostConstruct
     public void init() {
-        log.info("Show manager running!");
+        for (String user : plexUserList.split(",")) {
+            plexUsers.add(user.toLowerCase());
+        }
         Thread t1 = new Thread(new WebhookProcessor());
         t1.start();
+        log.info("Show manager running!");
     }
 
     private class WebhookProcessor implements Runnable {
@@ -59,6 +72,17 @@ public class ShowManagerServiceImpl implements ShowManagerService {
     }
 
     private void processWebhook(PlexWebhook webhook) throws TVTimeException {
+        if (!plexUsers.contains(webhook.account.title.toLowerCase())) {
+            log.info("Ignoring webhook for plex user '{}', only the following users will be processed: {}", webhook.account.title, plexUserList);
+            return;
+        }
+        if (!webhook.metadata.librarySectionType.equals("show")) {
+            log.info("Ignoring webhook for library type '{}', only type 'show' will be processed", webhook.metadata.librarySectionType);
+            return;
+        }
+        if (!webhook.event.equals("media.scrobble")) {
+            log.info("Ignoring webhook for event type '{}', only type media.scrobble will be processed", webhook.event);
+        }
         log.info("Processing webhook for {} S{}E{} - {}", webhook.metadata.grandparentTitle, webhook.metadata.parentIndex, webhook.metadata.index, webhook.metadata.title);
         String episodeId = null;
         for (Guid guid : webhook.metadata.guid) {
@@ -67,20 +91,31 @@ public class ShowManagerServiceImpl implements ShowManagerService {
             }
         }
         if (StringUtils.hasText(episodeId)) {
-            String result = null;
-            //Need to attempt this in a loop with diminishing delays. After failure threshold is reached throw the exception
+            boolean success = false;
             for (int i = 1; i <= 5; i++) {
                 try {
-                    result = tvTimeService.watchEpisode(episodeId);
+                    log.debug(tvTimeService.watchEpisode(episodeId));
+                    log.info("{} S{}E{} - {}, was successfully marked as watched", webhook.metadata.grandparentTitle, webhook.metadata.parentIndex, webhook.metadata.index, webhook.metadata.title);
+                    success = true;
                     break;
                 } catch (TVTimeException e) {
+                    log.warn("Connection to TV Time failed, will retry in {}s, attempts remaining {}", (6000 * i) / 1000, 5 - i);
                     delay(3000 * i);
                     tvTimeService.login();
                     delay(3000 * i);
+                } catch (WebClientRequestException e) {
+                    log.error("Unable to reach https://tvtime.com, please check your internet connection, will retry in 2 minutes.");
+                    log.debug(e.getMessage(), e);
+                    i--;
+                    delay(120000);
+                } catch (Exception e) {
+                    log.error(e.getMessage(), e);
+                    break;
                 }
             }
-            log.debug(result);
-            log.info("{} S{}E{} - {}, was successfully marked as watched", webhook.metadata.grandparentTitle, webhook.metadata.parentIndex, webhook.metadata.index, webhook.metadata.title);
+            if (!success) {
+                log.error("Failed to process webhook for for {} S{}E{} - {}", webhook.metadata.grandparentTitle, webhook.metadata.parentIndex, webhook.metadata.index, webhook.metadata.title);
+            }
         }
     }
 
