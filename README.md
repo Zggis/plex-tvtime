@@ -1,4 +1,4 @@
-<div align="center"><img height="200px" alt="logo" src="/favicon.png?raw=true"/></div>
+<div align="center"><img height="200px" alt="logo" src="src/main/resources/static/favicon.png?raw=true"/></div>
 
 ## <div align="right"><a href="https://www.buymeacoffee.com/zggis" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" alt="Buy Me A Coffee" height="41" width="174"></a></div>
 
