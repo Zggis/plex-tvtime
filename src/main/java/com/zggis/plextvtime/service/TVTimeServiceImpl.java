@@ -88,8 +88,6 @@ public class TVTimeServiceImpl implements TVTimeService {
         LinkedMultiValueMap<String, Integer> map = new LinkedMultiValueMap<>();
         map.add("episode_id", Integer.valueOf(episodeId));
         WebClient.RequestHeadersSpec<?> headersSpec = bodySpec.bodyValue("episode_id=" + episodeId);
-
-
         Mono<Tuple2> mono = headersSpec.exchangeToMono(response ->
                 response.bodyToMono(String.class)
                         .map(stringBody -> Tuples.of(stringBody, response.cookies())
@@ -109,10 +107,10 @@ public class TVTimeServiceImpl implements TVTimeService {
             newCookies.forEach((k, v) ->
                     {
                         if ("tvstRemember".equals(k) || "symfony".equals(k))
-                            this.cookies.put(k, parseParam(v.toString()));
+                            this.cookies.put(k, parseCookieValue(k, v.toString()));
                     }
             );
-            log.debug("Cookies updated : [tvstRemember={};symfony={}]", this.cookies.get("tvstRemember"), this.cookies.get("symfony"));
+            log.debug("Cookies updated : [tvstRemember={} symfony={}]", this.cookies.get("tvstRemember"), this.cookies.get("symfony"));
             if (!StringUtils.hasText(cookies.get("tvstRemember")) || "deleted".equals(cookies.get("tvstRemember"))) {
                 throw new TVTimeException("Session has expired, you must login again");
             }
@@ -147,20 +145,25 @@ public class TVTimeServiceImpl implements TVTimeService {
             payloadCookies.forEach((k, v) ->
                     {
                         if ("tvstRemember".equals(k) || "symfony".equals(k))
-                            this.cookies.put(k, parseParam(v.toString()));
+                            this.cookies.put(k, parseCookieValue(k, v.toString()));
                     }
             );
             if (!this.cookies.containsKey("tvstRemember") || !this.cookies.containsKey("symfony")) {
                 throw new TVTimeException("Your TV Time credentials are invalid");
             }
+            log.debug("Cookies updated [tvstRemember={} symfony={}]", cookies.get("tvstRemember"), cookies.get("symfony"));
             log.info("Login Successful");
         }
     }
 
-    private String parseParam(String v) {
+    private String parseCookieValue(String k, String v) {
         if (StringUtils.hasText(v)) {
-            String param = v.split(" ")[0];
-            return param.substring(param.indexOf('=') + 1, param.indexOf(';'));
+            String[] params = v.split(" ");
+            for (String param : params) {
+                if (param.contains(k) && !param.contains("deleted")) {
+                    return param.substring(param.indexOf('=') + 1, param.indexOf(';'));
+                }
+            }
         }
         return null;
     }
