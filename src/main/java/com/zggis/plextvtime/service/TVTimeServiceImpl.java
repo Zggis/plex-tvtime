@@ -85,8 +85,6 @@ public class TVTimeServiceImpl implements TVTimeService {
                 .cookie("user_id", userId)
                 .header("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
                 .header("Accept", "application/json, text/javascript, */*; q=0.01");
-        LinkedMultiValueMap<String, Integer> map = new LinkedMultiValueMap<>();
-        map.add("episode_id", Integer.valueOf(episodeId));
         WebClient.RequestHeadersSpec<?> headersSpec = bodySpec.bodyValue("episode_id=" + episodeId);
         Mono<Tuple2> mono = headersSpec.exchangeToMono(response ->
                 response.bodyToMono(String.class)
@@ -118,10 +116,7 @@ public class TVTimeServiceImpl implements TVTimeService {
     }
 
     private boolean isLoggedIn() {
-        if (!StringUtils.hasText(cookies.get("tvstRemember")) || "deleted".equals(cookies.get("tvstRemember")) || !StringUtils.hasText(cookies.get("symfony"))) {
-            return false;
-        }
-        return true;
+        return StringUtils.hasText(cookies.get("tvstRemember")) && !"deleted".equals(cookies.get("tvstRemember")) && StringUtils.hasText(cookies.get("symfony"));
     }
 
     @Override

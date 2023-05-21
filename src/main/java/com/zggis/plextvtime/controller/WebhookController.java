@@ -20,6 +20,6 @@ public class WebhookController {
     @RequestMapping(value = "/plex", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> handlePlexHook(@RequestBody PlexWebhook hook) {
         showManagerService.markAsWatched(hook);
-        return ResponseEntity.ok("Not Implemented");
+        return ResponseEntity.ok("Message Received");
     }
 }

@@ -12,7 +12,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.reactive.function.client.WebClientRequestException;
 
-import java.net.SocketException;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
@@ -26,12 +25,12 @@ public class ShowManagerServiceImpl implements ShowManagerService {
     @Value("${plex.user.list}")
     private String plexUserList;
 
-    private Set<String> plexUsers = new HashSet<>();
+    private final Set<String> plexUsers = new HashSet<>();
 
     @Autowired
     private TVTimeService tvTimeService;
 
-    private BlockingQueue<PlexWebhook> queue = new LinkedBlockingQueue<>();
+    private final BlockingQueue<PlexWebhook> queue = new LinkedBlockingQueue<>();
 
     @PostConstruct
     public void init() {
