@@ -81,6 +81,7 @@ public class ShowManagerServiceImpl implements ShowManagerService {
         }
         if (!webhook.event.equals("media.scrobble")) {
             log.info("Ignoring webhook for event type '{}', only type media.scrobble will be processed", webhook.event);
+            return;
         }
         log.info("Processing webhook for {} S{}E{} - {}", webhook.metadata.grandparentTitle, webhook.metadata.parentIndex, webhook.metadata.index, webhook.metadata.title);
         String episodeId = null;
