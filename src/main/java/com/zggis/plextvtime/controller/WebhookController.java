@@ -1,25 +1,36 @@
 package com.zggis.plextvtime.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zggis.plextvtime.dto.plex.PlexWebhook;
 import com.zggis.plextvtime.service.ShowManagerService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestParam;
 
-@RestController
+@Controller
 @RequestMapping("/webhook")
 public class WebhookController {
 
     @Autowired
     private ShowManagerService showManagerService;
 
-    @RequestMapping(value = "/plex", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<String> handlePlexHook(@RequestBody PlexWebhook hook) {
-        showManagerService.markAsWatched(hook);
-        return ResponseEntity.ok("Message Received");
+    @RequestMapping(value = "/plex", method = RequestMethod.POST)
+    public ResponseEntity<String> handlePlexHook(@RequestParam String payload) {
+        ObjectMapper mapper = new ObjectMapper();
+        PlexWebhook hook;
+        try {
+            hook = mapper.readValue(payload, PlexWebhook.class);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+        if (hook != null) {
+            showManagerService.markAsWatched(hook);
+            return ResponseEntity.ok("Message Received");
+        }
+        return ResponseEntity.badRequest().build();
     }
 }
