@@ -14,7 +14,7 @@ You can run Plex-TVTime on Docker locally by using the following command. Replac
 $ docker run -e TVTIME_USER={Your TVTime username} -e TVTIME_PASSWORD={Your TVTime password} -e PLEX_USERS={Plex username(s) to link} -p 8080:8080 zggis/plex-tvtime:latest
 ```
 #### Java App
-You can run Plex-TVTime as a Java program from command prompt. Java JRE 11 is required. To grab the latest Howler JAR, navigate to the <a href="https://github.com/Zggis/plex-tvtime/releases">Releases</a> page. Run the JAR using this command.
+You can run Plex-TVTime as a Java program from command prompt. Java JRE 11 is required. To grab the latest Plex-TVTime JAR, navigate to the <a href="https://github.com/Zggis/plex-tvtime/releases">Releases</a> page. Run the JAR using this command.
 ```
 $ java -jar -Dspring.profiles.active=local plex-tvtime*.jar
 ```
