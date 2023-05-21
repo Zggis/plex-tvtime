@@ -49,11 +49,11 @@ public class ShowManagerServiceImpl implements ShowManagerService {
         }
         if (StringUtils.hasText(excludedShowList))
             for (String show : excludedShowList.split(",")) {
-                excludedShows.add(show.toLowerCase());
+                excludedShows.add(StringUtils.replace(show.toLowerCase(), "%2C", ","));
             }
         if (StringUtils.hasText(includeShowList))
             for (String show : includeShowList.split(",")) {
-                includedShows.add(show.toLowerCase());
+                includedShows.add(StringUtils.replace(show.toLowerCase(), "%2C", ","));
             }
         Thread t1 = new Thread(new WebhookProcessor());
         t1.start();
