@@ -49,15 +49,15 @@ public class ShowManagerServiceImpl implements ShowManagerService {
         }
         if (StringUtils.hasText(excludedShowList))
             for (String show : excludedShowList.split(",")) {
-                excludedShows.add(StringUtils.replace(show.toLowerCase(), "%2C", ","));
+                excludedShows.add(StringUtils.replace(show.toLowerCase(), "%2c", ",").trim());
             }
         if (StringUtils.hasText(includeShowList))
             for (String show : includeShowList.split(",")) {
-                includedShows.add(StringUtils.replace(show.toLowerCase(), "%2C", ","));
+                includedShows.add(StringUtils.replace(show.toLowerCase(), "%2c", ",").trim());
             }
         Thread t1 = new Thread(new WebhookProcessor());
+        t1.setName("queue-exec");
         t1.start();
-        log.info("Show manager running");
     }
 
     private class WebhookProcessor implements Runnable {
@@ -69,7 +69,7 @@ public class ShowManagerServiceImpl implements ShowManagerService {
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 } catch (TVTimeException e) {
-                    log.error("Unable to authenticate with TVTime, please check your credentials.");
+                    log.error("Unable to authenticate with TVTime, please check your credentials");
                     log.error(e.getMessage(), e);
                     System.exit(1);
                 }
@@ -90,7 +90,7 @@ public class ShowManagerServiceImpl implements ShowManagerService {
 
     private void processWebhook(PlexWebhook webhook) throws TVTimeException {
         if (!plexUsers.contains(webhook.account.title.toLowerCase())) {
-            log.info("Ignoring webhook for plex user '{}', only the following users will be processed: {}", webhook.account.title, plexUserList);
+            log.info("Ignoring webhook for plex user '{}', only the configured users will be processed", webhook.account.title);
             return;
         }
         if (!webhook.metadata.librarySectionType.equals("show")) {
@@ -112,7 +112,6 @@ public class ShowManagerServiceImpl implements ShowManagerService {
             log.info("Ignoring webhook for event type '{}', only type media.scrobble will be processed", webhook.event);
             return;
         }
-
 
         log.info("Processing webhook for {} S{}E{} - {}", webhook.metadata.grandparentTitle, webhook.metadata.parentIndex, webhook.metadata.index, webhook.metadata.title);
         String episodeId = null;

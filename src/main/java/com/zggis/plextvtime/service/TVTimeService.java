@@ -7,6 +7,4 @@ public interface TVTimeService {
 
     String watchEpisode(String episodeId) throws TVTimeException;
 
-    String getUserId();
-
 }
