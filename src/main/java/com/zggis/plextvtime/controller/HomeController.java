@@ -1,6 +1,8 @@
 package com.zggis.plextvtime.controller;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.info.BuildProperties;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.StringUtils;
@@ -21,10 +23,14 @@ public class HomeController {
     @Value("${plex.shows.include}")
     private String plexShowsInclude;
 
+    @Autowired
+    private BuildProperties buildProperties;
+
     @GetMapping("/")
     public String loadPage(Model model) {
         model.addAttribute("tvTimeUser", tvTimeUser);
         model.addAttribute("plexUsers", plexUserList);
+        model.addAttribute("version", buildProperties.getVersion());
         if (StringUtils.hasText(plexShowsExclude)) {
             model.addAttribute("plexInclude", "(Overridden by excluded shows)");
         } else if (!StringUtils.hasText(plexShowsInclude)) {
