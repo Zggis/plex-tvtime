@@ -12,8 +12,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.reactive.function.client.WebClientRequestException;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -33,9 +32,9 @@ public class ShowManagerServiceImpl implements ShowManagerService {
 
     private final Set<String> plexUsers = new HashSet<>();
 
-    private final Set<String> excludedShows = new HashSet<>();
+    private final Set<Show> excludedShows = new HashSet<>();
 
-    private final Set<String> includedShows = new HashSet<>();
+    private final Set<Show> includedShows = new HashSet<>();
 
     @Autowired
     private TVTimeService tvTimeService;
@@ -49,11 +48,11 @@ public class ShowManagerServiceImpl implements ShowManagerService {
         }
         if (StringUtils.hasText(excludedShowList))
             for (String show : excludedShowList.split(",")) {
-                excludedShows.add(StringUtils.replace(show.toLowerCase(), "%2c", ",").trim());
+                excludedShows.add(new Show(StringUtils.replace(show, "%2C", ",").trim()));
             }
         if (StringUtils.hasText(includeShowList))
             for (String show : includeShowList.split(",")) {
-                includedShows.add(StringUtils.replace(show.toLowerCase(), "%2c", ",").trim());
+                includedShows.add(new Show(StringUtils.replace(show, "%2C", ",").trim()));
             }
         Thread t1 = new Thread(new WebhookProcessor());
         t1.setName("queue-exec");
@@ -88,6 +87,16 @@ public class ShowManagerServiceImpl implements ShowManagerService {
         }
     }
 
+    @Override
+    public List<Show> getExcludedShows() {
+        return new ArrayList<>(excludedShows);
+    }
+
+    @Override
+    public List<Show> getIncludedShows() {
+        return new ArrayList<>(includedShows);
+    }
+
     private void processWebhook(PlexWebhook webhook) throws TVTimeException {
         if (!plexUsers.contains(webhook.account.title.toLowerCase())) {
             log.info("Ignoring webhook for plex user '{}', only the configured users will be processed", webhook.account.title);
@@ -98,12 +107,12 @@ public class ShowManagerServiceImpl implements ShowManagerService {
             return;
         }
         if (!excludedShows.isEmpty()) {
-            if (excludedShows.contains(webhook.metadata.grandparentTitle.toLowerCase())) {
+            if (excludedShows.contains(new Show(webhook.metadata.grandparentTitle))) {
                 log.info("Ignoring webhook for show '{}', its in the excluded list", webhook.metadata.grandparentTitle);
                 return;
             }
         } else if (!includedShows.isEmpty()) {
-            if (!includedShows.contains(webhook.metadata.grandparentTitle.toLowerCase())) {
+            if (!includedShows.contains(new Show(webhook.metadata.grandparentTitle))) {
                 log.info("Ignoring webhook for show '{}', its not in the included list", webhook.metadata.grandparentTitle);
                 return;
             }

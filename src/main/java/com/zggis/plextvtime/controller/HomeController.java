@@ -1,5 +1,6 @@
 package com.zggis.plextvtime.controller;
 
+import com.zggis.plextvtime.service.ShowManagerService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.info.BuildProperties;
@@ -26,6 +27,9 @@ public class HomeController {
     @Autowired
     private BuildProperties buildProperties;
 
+    @Autowired
+    private ShowManagerService showManagerService;
+
     @GetMapping("/")
     public String loadPage(Model model) {
         model.addAttribute("tvTimeUser", tvTimeUser);
@@ -36,12 +40,12 @@ public class HomeController {
         } else if (!StringUtils.hasText(plexShowsInclude)) {
             model.addAttribute("plexInclude", "All");
         } else {
-            model.addAttribute("plexInclude", plexShowsInclude);
+            model.addAttribute("includedShows", showManagerService.getIncludedShows());
         }
         if (!StringUtils.hasText(plexShowsExclude)) {
             model.addAttribute("plexExclude", "None");
         } else {
-            model.addAttribute("plexExclude", plexShowsExclude);
+            model.addAttribute("excludedShows", showManagerService.getExcludedShows());
         }
         return "home";
     }

@@ -37,7 +37,7 @@
         </div>
         </p>
         <p class="lead">
-        <table class="table table-dark table-striped">
+        <table class="table table-dark table-striped text-start">
             <thead>
             <tr>
                 <th scope="col">Setting</th>
@@ -55,11 +55,21 @@
             </tr>
             <tr>
                 <td>Excluded Shows</td>
-                <td th:text="${plexExclude}"></td>
+                <td th:if="${plexExclude}" th:text="${plexExclude}"></td>
+                <td th:if="${plexExclude == null}">
+                    <ul>
+                        <li th:each="show : ${excludedShows}" th:text="${show.name}"></li>
+                    </ul>
+                </td>
             </tr>
             <tr>
                 <td>Included Shows</td>
-                <td th:text="${plexInclude}"></td>
+                <td th:if="${plexInclude}" th:text="${plexInclude}"></td>
+                <td th:if="${plexInclude == null}">
+                    <ul>
+                        <li th:each="show : ${includedShows}" th:text="${show.name}"></li>
+                    </ul>
+                </td>
             </tr>
             </tbody>
         </table>
