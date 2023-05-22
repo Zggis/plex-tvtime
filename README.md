@@ -49,4 +49,4 @@ PLEX_SHOWS_EXCLUDE | Undefined | A comma separated list of TV show titles that w
 PLEX_SHOWS_INCLUDE | Undefined | Overridden and ignored if PLEX_SHOWS_EXCLUDE is set, otherwise only shows that appear in this list will be sent to TVTime.
 
 ### Troubleshooting
-Please check the logs, as described above many webhook events are intentionally ignored depending on configuration.
+Please check the logs, as described above many webhook events are intentionally ignored depending on configuration. If you can't resolve on your own open an issue and I will help.
