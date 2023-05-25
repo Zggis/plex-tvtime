@@ -51,3 +51,8 @@ LOGGING_LEVEL | INFO | Set to TRACE or DEBUG for additional logging.
 
 ### Troubleshooting
 Please check the logs, as described above many webhook events are intentionally ignored depending on configuration. If you can't resolve on your own open an issue and I will help.
+
+### FAQ
+**Question:** What about movies?
+
+**Answer:** I tried to get movies working as I know the TVTime mobile app supports tracking movies, however the website does not seem to support this. TVTime does not publish a public api so I had to rely on scraping the website which left me with no way to incorporate movies.
