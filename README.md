@@ -50,7 +50,7 @@ PLEX_SHOWS_INCLUDE | Undefined | Overridden and ignored if PLEX_SHOWS_EXCLUDE is
 LOGGING_LEVEL | INFO | Set to TRACE or DEBUG for additional logging.
 
 ### Troubleshooting
-Please check the logs, as described above many webhook events are intentionally ignored depending on configuration. If you can't resolve on your own open an issue and I will help.
+Please check the logs, as described above many webhook events are intentionally ignored depending on configuration. If you can't resolve on your own open an <a href="https://github.com/Zggis/plex-tvtime/issues/new">issue</a> and I will help.
 
 ### FAQ
 **Question:** What about movies?
