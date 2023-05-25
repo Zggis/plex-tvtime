@@ -43,5 +43,5 @@ jobs:
       - name: Publish JAR
         uses: actions/upload-artifact@v3
         with:
-          name: Dobby JAR
+          name: Plex-TVTime JAR
           path: build/libs/plex-tvtime*.jar
