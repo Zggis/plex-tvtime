@@ -1,6 +1,7 @@
 package com.zggis.plextvtime.service;
 
 import com.zggis.plextvtime.exception.TVTimeException;
+import com.zggis.plextvtime.util.ConsoleColor;
 import com.zggis.plextvtime.util.ThreadUtil;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
@@ -61,11 +62,11 @@ public class TVTimeServiceImpl implements TVTimeService {
                 System.exit(1);
             } catch (Exception e) {
                 log.warn(e.getMessage(), e);
-                log.warn("Connection to TV Time failed, will retry in {}s, attempts remaining {}", (3000 * i) / 1000, 5 - i);
+                log.warn("{}Connection to TV Time failed, will retry in {}s, attempts remaining {}{}", ConsoleColor.YELLOW.value, (3000 * i) / 1000, 5 - i, ConsoleColor.NONE.value);
                 ThreadUtil.delay(3000 * i);
             }
         }
-        throw new TVTimeException("Unable to connect to TVTime after multiple attempts, please check your internet connection. It is possible http://tvtime.com is unavailable.");
+        throw new TVTimeException(ConsoleColor.RED.value + "Unable to connect to TVTime after multiple attempts, please check your internet connection. It is possible http://tvtime.com is unavailable." + ConsoleColor.NONE.value);
     }
 
     @Override

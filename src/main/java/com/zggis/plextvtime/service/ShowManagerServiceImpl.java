@@ -3,6 +3,7 @@ package com.zggis.plextvtime.service;
 import com.zggis.plextvtime.dto.plex.Guid;
 import com.zggis.plextvtime.dto.plex.PlexWebhook;
 import com.zggis.plextvtime.exception.TVTimeException;
+import com.zggis.plextvtime.util.ConsoleColor;
 import com.zggis.plextvtime.util.ThreadUtil;
 import jakarta.annotation.PostConstruct;
 import lombok.NoArgsConstructor;
@@ -123,7 +124,7 @@ public class ShowManagerServiceImpl implements ShowManagerService {
             return;
         }
 
-        log.info("Processing webhook for {} S{}E{} - {}", webhook.metadata.grandparentTitle, webhook.metadata.parentIndex, webhook.metadata.index, webhook.metadata.title);
+        log.info("{}Processing webhook for {} S{}E{} - {}{}", ConsoleColor.CYAN.value, webhook.metadata.grandparentTitle, webhook.metadata.parentIndex, webhook.metadata.index, webhook.metadata.title, ConsoleColor.NONE.value);
         String episodeId = null;
         for (Guid guid : webhook.metadata.guid) {
             if (guid.id.contains("tvdb")) {
@@ -135,16 +136,16 @@ public class ShowManagerServiceImpl implements ShowManagerService {
             for (int i = 1; i <= 5; i++) {
                 try {
                     log.debug(tvTimeService.watchEpisode(episodeId));
-                    log.info("{} S{}E{} - {}, was successfully marked as watched", webhook.metadata.grandparentTitle, webhook.metadata.parentIndex, webhook.metadata.index, webhook.metadata.title);
+                    log.info("{}{} S{}E{} - {}, was successfully marked as watched!{}", ConsoleColor.GREEN.value, webhook.metadata.grandparentTitle, webhook.metadata.parentIndex, webhook.metadata.index, webhook.metadata.title, ConsoleColor.NONE.value);
                     success = true;
                     break;
                 } catch (TVTimeException e) {
-                    log.warn("Connection to TV Time failed, will retry in {}s, attempts remaining {}", (6000 * i) / 1000, 5 - i);
+                    log.warn("{}Connection to TV Time failed, will retry in {}s, attempts remaining {}{}", ConsoleColor.YELLOW.value, (6000 * i) / 1000, 5 - i, ConsoleColor.NONE.value);
                     ThreadUtil.delay(3000 * i);
                     tvTimeService.login();
                     ThreadUtil.delay(3000 * i);
                 } catch (WebClientRequestException e) {
-                    log.error("Unable to reach https://tvtime.com, please check your internet connection, will retry in 2 minutes.");
+                    log.error("{}Unable to reach https://tvtime.com, please check your internet connection, will retry in 2 minutes.{}", ConsoleColor.YELLOW.value, ConsoleColor.NONE.value);
                     log.debug(e.getMessage(), e);
                     i--;
                     ThreadUtil.delay(120000);
@@ -154,7 +155,7 @@ public class ShowManagerServiceImpl implements ShowManagerService {
                 }
             }
             if (!success) {
-                log.error("Failed to process webhook for for {} S{}E{} - {}", webhook.metadata.grandparentTitle, webhook.metadata.parentIndex, webhook.metadata.index, webhook.metadata.title);
+                log.error("{}Failed to process webhook for for {} S{}E{} - {}{}", ConsoleColor.RED.value, webhook.metadata.grandparentTitle, webhook.metadata.parentIndex, webhook.metadata.index, webhook.metadata.title, ConsoleColor.NONE.value);
             }
         }
     }
