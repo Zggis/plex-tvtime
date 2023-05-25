@@ -3,6 +3,7 @@ package com.zggis.plextvtime.service;
 import com.zggis.plextvtime.dto.plex.Guid;
 import com.zggis.plextvtime.dto.plex.PlexWebhook;
 import com.zggis.plextvtime.exception.TVTimeException;
+import com.zggis.plextvtime.util.ThreadUtil;
 import jakarta.annotation.PostConstruct;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -139,14 +140,14 @@ public class ShowManagerServiceImpl implements ShowManagerService {
                     break;
                 } catch (TVTimeException e) {
                     log.warn("Connection to TV Time failed, will retry in {}s, attempts remaining {}", (6000 * i) / 1000, 5 - i);
-                    delay(3000 * i);
+                    ThreadUtil.delay(3000 * i);
                     tvTimeService.login();
-                    delay(3000 * i);
+                    ThreadUtil.delay(3000 * i);
                 } catch (WebClientRequestException e) {
                     log.error("Unable to reach https://tvtime.com, please check your internet connection, will retry in 2 minutes.");
                     log.debug(e.getMessage(), e);
                     i--;
-                    delay(120000);
+                    ThreadUtil.delay(120000);
                 } catch (Exception e) {
                     log.error(e.getMessage(), e);
                     break;
@@ -157,13 +158,4 @@ public class ShowManagerServiceImpl implements ShowManagerService {
             }
         }
     }
-
-    private void delay(int millis) {
-        try {
-            Thread.sleep(millis);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
 }

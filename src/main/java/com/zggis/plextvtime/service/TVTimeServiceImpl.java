@@ -1,6 +1,7 @@
 package com.zggis.plextvtime.service;
 
 import com.zggis.plextvtime.exception.TVTimeException;
+import com.zggis.plextvtime.util.ThreadUtil;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
@@ -15,6 +16,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.util.StringUtils;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientRequestException;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple2;
 import reactor.util.function.Tuples;
@@ -49,9 +51,22 @@ public class TVTimeServiceImpl implements TVTimeService {
     }
 
     @PostConstruct
-    public void init() throws IOException {
-        login();
-        fetchProfile();
+    public void init() {
+        for (int i = 1; i <= 5; i++) {
+            try {
+                login();
+                fetchProfile();
+                return;
+            } catch (TVTimeException e) {
+                log.error(e.getMessage());
+                System.exit(1);
+            } catch (Exception e) {
+                log.warn(e.getMessage(), e);
+                log.warn("Connection to TV Time failed, will retry in {}s, attempts remaining {}", (3000 * i) / 1000, 5 - i);
+                ThreadUtil.delay(3000 * i);
+            }
+        }
+        throw new TVTimeException("Unable to connect to TVTime after multiple attempts, please check your internet connection. It is possible http://tvtime.com is unavailable.");
     }
 
     @Override
