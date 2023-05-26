@@ -73,6 +73,8 @@ public class ShowManagerServiceImpl implements ShowManagerService {
                     log.error("Unable to authenticate with TVTime, please check your credentials");
                     log.error(e.getMessage(), e);
                     System.exit(1);
+                } catch (Exception e) {
+                    log.warn("{}Unable to process webhook message, unexpected JSON format: {}{}", ConsoleColor.YELLOW.value, e.getMessage(), ConsoleColor.NONE.value);
                 }
             }
         }
