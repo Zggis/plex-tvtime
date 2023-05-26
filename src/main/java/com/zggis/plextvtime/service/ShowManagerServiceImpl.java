@@ -74,7 +74,7 @@ public class ShowManagerServiceImpl implements ShowManagerService {
                     log.error(e.getMessage(), e);
                     System.exit(1);
                 } catch (Exception e) {
-                    log.warn("{}Unable to process webhook message, unexpected JSON format: {}{}", ConsoleColor.YELLOW.value, e.getMessage(), ConsoleColor.NONE.value);
+                    log.warn("{}Unable to process webhook message: {}{}", ConsoleColor.YELLOW.value, e.getMessage(), ConsoleColor.NONE.value);
                 }
             }
         }
