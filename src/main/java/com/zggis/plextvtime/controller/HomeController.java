@@ -1,5 +1,6 @@
 package com.zggis.plextvtime.controller;
 
+import com.zggis.plextvtime.config.AccountConfig;
 import com.zggis.plextvtime.service.ShowManagerService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,17 +13,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 @Controller
 public class HomeController {
 
-    @Value("${plex.user.list}")
-    private String plexUserList;
-
-    @Value("${tvtime.user}")
-    private String tvTimeUser;
-
-    @Value("${plex.shows.exclude}")
-    private String plexShowsExclude;
-
-    @Value("${plex.shows.include}")
-    private String plexShowsInclude;
+    @Autowired
+    private AccountConfig accountConfig;
 
     @Autowired
     private BuildProperties buildProperties;
@@ -32,17 +24,17 @@ public class HomeController {
 
     @GetMapping("/")
     public String loadPage(Model model) {
-        model.addAttribute("tvTimeUser", tvTimeUser);
-        model.addAttribute("plexUsers", plexUserList);
+        model.addAttribute("tvTimeUser", accountConfig.getAccounts().get(0).getTvtimeUser());
+        model.addAttribute("plexUsers", accountConfig.getAccounts().get(0).getPlexUsers());
         model.addAttribute("version", buildProperties.getVersion());
-        if (StringUtils.hasText(plexShowsExclude)) {
+        if (StringUtils.hasText(accountConfig.getAccounts().get(0).getPlexShowsExclude())) {
             model.addAttribute("plexInclude", "(Overridden by excluded shows)");
-        } else if (!StringUtils.hasText(plexShowsInclude)) {
+        } else if (!StringUtils.hasText(accountConfig.getAccounts().get(0).getPlexShowsInclude())) {
             model.addAttribute("plexInclude", "All");
         } else {
             model.addAttribute("includedShows", showManagerService.getIncludedShows());
         }
-        if (!StringUtils.hasText(plexShowsExclude)) {
+        if (!StringUtils.hasText(accountConfig.getAccounts().get(0).getPlexShowsExclude())) {
             model.addAttribute("plexExclude", "None");
         } else {
             model.addAttribute("excludedShows", showManagerService.getExcludedShows());

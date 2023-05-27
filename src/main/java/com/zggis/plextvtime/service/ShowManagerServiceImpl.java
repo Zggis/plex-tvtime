@@ -1,5 +1,6 @@
 package com.zggis.plextvtime.service;
 
+import com.zggis.plextvtime.config.AccountConfig;
 import com.zggis.plextvtime.dto.plex.Guid;
 import com.zggis.plextvtime.dto.plex.PlexWebhook;
 import com.zggis.plextvtime.exception.TVTimeException;
@@ -23,14 +24,8 @@ import java.util.concurrent.LinkedBlockingQueue;
 @Slf4j
 public class ShowManagerServiceImpl implements ShowManagerService {
 
-    @Value("${plex.user.list}")
-    private String plexUserList;
-
-    @Value("${plex.shows.exclude}")
-    private String excludedShowList;
-
-    @Value("${plex.shows.include}")
-    private String includeShowList;
+    @Autowired
+    private AccountConfig accountConfig;
 
     private final Set<String> plexUsers = new HashSet<>();
 
@@ -45,15 +40,15 @@ public class ShowManagerServiceImpl implements ShowManagerService {
 
     @PostConstruct
     public void init() {
-        for (String user : plexUserList.split(",")) {
+        for (String user : accountConfig.getAccounts().get(0).getPlexUsers().split(",")) {
             plexUsers.add(user.toLowerCase());
         }
-        if (StringUtils.hasText(excludedShowList))
-            for (String show : excludedShowList.split(",")) {
+        if (StringUtils.hasText(accountConfig.getAccounts().get(0).getPlexShowsExclude()))
+            for (String show : accountConfig.getAccounts().get(0).getPlexShowsExclude().split(",")) {
                 excludedShows.add(new Show(StringUtils.replace(show, "%2C", ",").trim()));
             }
-        if (StringUtils.hasText(includeShowList))
-            for (String show : includeShowList.split(",")) {
+        if (StringUtils.hasText(accountConfig.getAccounts().get(0).getPlexShowsInclude()))
+            for (String show : accountConfig.getAccounts().get(0).getPlexShowsInclude().split(",")) {
                 includedShows.add(new Show(StringUtils.replace(show, "%2C", ",").trim()));
             }
         Thread t1 = new Thread(new WebhookProcessor());

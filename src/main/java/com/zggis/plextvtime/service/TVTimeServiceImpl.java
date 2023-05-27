@@ -1,5 +1,6 @@
 package com.zggis.plextvtime.service;
 
+import com.zggis.plextvtime.config.AccountConfig;
 import com.zggis.plextvtime.exception.TVTimeException;
 import com.zggis.plextvtime.util.ConsoleColor;
 import com.zggis.plextvtime.util.ThreadUtil;
@@ -7,6 +8,7 @@ import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -34,11 +36,10 @@ public class TVTimeServiceImpl implements TVTimeService {
     private static final String DELETED = "deleted";
     private final Map<String, String> cookies = new HashMap<>();
     private final WebClient client;
-    @Value("${tvtime.user}")
-    private String user;
-    @Value("${tvtime.password}")
-    private String password;
     private String userId;
+
+    @Autowired
+    private AccountConfig accountConfig;
 
     public TVTimeServiceImpl() {
         client = WebClient.builder()
@@ -74,8 +75,8 @@ public class TVTimeServiceImpl implements TVTimeService {
         WebClient.UriSpec<WebClient.RequestBodySpec> uriSpec = client.post();
         WebClient.RequestBodySpec bodySpec = uriSpec.uri("/signin");
         LinkedMultiValueMap<String, String> map = new LinkedMultiValueMap<>();
-        map.add("username", user);
-        map.add("password", password);
+        map.add("username", accountConfig.getAccounts().get(0).getTvtimeUser());
+        map.add("password", accountConfig.getAccounts().get(0).getTvtimePassword());
         WebClient.RequestHeadersSpec<?> headersSpec = bodySpec.body(
                 BodyInserters.fromMultipartData(map));
         Mono<MultiValueMap> mono = headersSpec.exchangeToMono(response ->
