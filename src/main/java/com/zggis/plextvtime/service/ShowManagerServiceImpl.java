@@ -1,6 +1,7 @@
 package com.zggis.plextvtime.service;
 
 import com.zggis.plextvtime.config.AccountConfig;
+import com.zggis.plextvtime.config.AccountLink;
 import com.zggis.plextvtime.dto.plex.Guid;
 import com.zggis.plextvtime.dto.plex.PlexWebhook;
 import com.zggis.plextvtime.exception.TVTimeException;
@@ -10,7 +11,6 @@ import jakarta.annotation.PostConstruct;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.reactive.function.client.WebClientRequestException;
@@ -38,6 +38,10 @@ public class ShowManagerServiceImpl implements ShowManagerService {
 
     private final BlockingQueue<PlexWebhook> queue = new LinkedBlockingQueue<>();
 
+    private final Map<String, String> plexUserToTVTimeUserMap = new HashMap<>();
+
+    private final Map<String, AccountLink> tvtimeAccountMap = new HashMap<>();
+
     @PostConstruct
     public void init() {
         for (String user : accountConfig.getAccounts().get(0).getPlexUsers().split(",")) {
@@ -51,6 +55,15 @@ public class ShowManagerServiceImpl implements ShowManagerService {
             for (String show : accountConfig.getAccounts().get(0).getPlexShowsInclude().split(",")) {
                 includedShows.add(new Show(StringUtils.replace(show, "%2C", ",").trim()));
             }
+
+        for (AccountLink account : accountConfig.getAccounts()) {
+            loginUser(account.getTvtimeUser(), account.getTvtimePassword());
+            tvtimeAccountMap.put(account.getTvtimeUser(), account);
+            for (String plexUser : account.getPlexUsers().toLowerCase().split(",")) {
+                plexUserToTVTimeUserMap.put(plexUser, account.getTvtimeUser());
+            }
+        }
+
         Thread t1 = new Thread(new WebhookProcessor());
         t1.setName("queue-exec");
         t1.start();
@@ -130,16 +143,18 @@ public class ShowManagerServiceImpl implements ShowManagerService {
         }
         if (StringUtils.hasText(episodeId)) {
             boolean success = false;
+            String tvtimeUser = plexUserToTVTimeUserMap.get(webhook.account.title.toLowerCase());
             for (int i = 1; i <= 5; i++) {
                 try {
-                    log.debug(tvTimeService.watchEpisode(episodeId));
+                    log.debug(tvTimeService.watchEpisode(tvtimeUser, episodeId));
                     log.info("{}{} S{}E{} - {}, was successfully marked as watched!{}", ConsoleColor.GREEN.value, webhook.metadata.grandparentTitle, webhook.metadata.parentIndex, webhook.metadata.index, webhook.metadata.title, ConsoleColor.NONE.value);
                     success = true;
                     break;
                 } catch (TVTimeException e) {
-                    log.warn("{}Connection to TV Time failed, will retry in {}s, attempts remaining {}{}", ConsoleColor.YELLOW.value, (6000 * i) / 1000, 5 - i, ConsoleColor.NONE.value);
+                    log.warn("{}Connection to TV Time failed for user {}, will retry in {}s, attempts remaining {}{}", ConsoleColor.YELLOW.value, tvtimeUser, (6000 * i) / 1000, 5 - i, ConsoleColor.NONE.value);
                     ThreadUtil.delay(3000 * i);
-                    tvTimeService.login();
+                    AccountLink tvtimeAccount = tvtimeAccountMap.get(tvtimeUser);
+                    tvTimeService.login(tvtimeAccount.getTvtimeUser(), tvtimeAccount.getTvtimePassword());
                     ThreadUtil.delay(3000 * i);
                 } catch (WebClientRequestException e) {
                     log.error("{}Unable to reach https://tvtime.com, please check your internet connection, will retry in 2 minutes.{}", ConsoleColor.YELLOW.value, ConsoleColor.NONE.value);
@@ -155,5 +170,25 @@ public class ShowManagerServiceImpl implements ShowManagerService {
                 log.error("{}Failed to process webhook for for {} S{}E{} - {}{}", ConsoleColor.RED.value, webhook.metadata.grandparentTitle, webhook.metadata.parentIndex, webhook.metadata.index, webhook.metadata.title, ConsoleColor.NONE.value);
             }
         }
+    }
+
+    public void loginUser(String user, String password) {
+        log.info("Logging {} in to TVTime...", user);
+        for (int i = 1; i <= 5; i++) {
+            try {
+                tvTimeService.login(user, password);
+                tvTimeService.fetchProfile(user);
+                log.info("{}{} has been successfully logged in!{}", ConsoleColor.GREEN.value, user, ConsoleColor.NONE.value);
+                return;
+            } catch (TVTimeException e) {
+                log.error(e.getMessage());
+                System.exit(1);
+            } catch (Exception e) {
+                log.warn(e.getMessage(), e);
+                log.warn("{}Connection to TV Time failed, will retry in {}s, attempts remaining {}{}", ConsoleColor.YELLOW.value, (3000 * i) / 1000, 5 - i, ConsoleColor.NONE.value);
+                ThreadUtil.delay(3000 * i);
+            }
+        }
+        throw new TVTimeException(ConsoleColor.RED.value + "Unable to connect to TVTime after multiple attempts, please check your internet connection. It is possible http://tvtime.com is unavailable." + ConsoleColor.NONE.value);
     }
 }

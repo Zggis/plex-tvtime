@@ -2,9 +2,13 @@ package com.zggis.plextvtime.service;
 
 import com.zggis.plextvtime.exception.TVTimeException;
 
-public interface TVTimeService {
-    void login();
+import java.io.IOException;
 
-    String watchEpisode(String episodeId) throws TVTimeException;
+public interface TVTimeService {
+    void login(String user, String password);
+
+    void fetchProfile(String user) throws IOException;
+
+    String watchEpisode(String user, String episodeId) throws TVTimeException;
 
 }
