@@ -38,8 +38,6 @@ public class ShowManagerServiceImpl implements ShowManagerService {
 
     private final BlockingQueue<PlexWebhook> queue = new LinkedBlockingQueue<>();
 
-    private final Map<String, String> plexUserToTVTimeUserMap = new HashMap<>();
-
     private final Map<String, AccountLink> tvtimeAccountMap = new HashMap<>();
 
     @PostConstruct
@@ -59,9 +57,6 @@ public class ShowManagerServiceImpl implements ShowManagerService {
         for (AccountLink account : accountConfig.getAccounts()) {
             loginUser(account.getTvtimeUser(), account.getTvtimePassword());
             tvtimeAccountMap.put(account.getTvtimeUser(), account);
-            for (String plexUser : account.getPlexUsers().toLowerCase().split(",")) {
-                plexUserToTVTimeUserMap.put(plexUser, account.getTvtimeUser());
-            }
         }
 
         Thread t1 = new Thread(new WebhookProcessor());
@@ -133,7 +128,6 @@ public class ShowManagerServiceImpl implements ShowManagerService {
             log.info("Ignoring webhook for event type '{}', only type media.scrobble will be processed", webhook.event);
             return;
         }
-
         log.info("{}Processing webhook for {} S{}E{} - {}{}", ConsoleColor.CYAN.value, webhook.metadata.grandparentTitle, webhook.metadata.parentIndex, webhook.metadata.index, webhook.metadata.title, ConsoleColor.NONE.value);
         String episodeId = null;
         for (Guid guid : webhook.metadata.guid) {
@@ -142,33 +136,40 @@ public class ShowManagerServiceImpl implements ShowManagerService {
             }
         }
         if (StringUtils.hasText(episodeId)) {
-            boolean success = false;
-            String tvtimeUser = plexUserToTVTimeUserMap.get(webhook.account.title.toLowerCase());
-            for (int i = 1; i <= 5; i++) {
-                try {
-                    log.debug(tvTimeService.watchEpisode(tvtimeUser, episodeId));
-                    log.info("{}{} S{}E{} - {}, was successfully marked as watched!{}", ConsoleColor.GREEN.value, webhook.metadata.grandparentTitle, webhook.metadata.parentIndex, webhook.metadata.index, webhook.metadata.title, ConsoleColor.NONE.value);
-                    success = true;
-                    break;
-                } catch (TVTimeException e) {
-                    log.warn("{}Connection to TV Time failed for user {}, will retry in {}s, attempts remaining {}{}", ConsoleColor.YELLOW.value, tvtimeUser, (6000 * i) / 1000, 5 - i, ConsoleColor.NONE.value);
-                    ThreadUtil.delay(3000 * i);
-                    AccountLink tvtimeAccount = tvtimeAccountMap.get(tvtimeUser);
-                    tvTimeService.login(tvtimeAccount.getTvtimeUser(), tvtimeAccount.getTvtimePassword());
-                    ThreadUtil.delay(3000 * i);
-                } catch (WebClientRequestException e) {
-                    log.error("{}Unable to reach https://tvtime.com, please check your internet connection, will retry in 2 minutes.{}", ConsoleColor.YELLOW.value, ConsoleColor.NONE.value);
-                    log.debug(e.getMessage(), e);
-                    i--;
-                    ThreadUtil.delay(120000);
-                } catch (Exception e) {
-                    log.error(e.getMessage(), e);
-                    break;
+            for (AccountLink account : accountConfig.getAccounts()) {
+                if (hasPlexUser(account, webhook.account.title)) {
+                    sendUserWatchRequest(account.getTvtimeUser(), episodeId, webhook);
                 }
             }
-            if (!success) {
-                log.error("{}Failed to process webhook for for {} S{}E{} - {}{}", ConsoleColor.RED.value, webhook.metadata.grandparentTitle, webhook.metadata.parentIndex, webhook.metadata.index, webhook.metadata.title, ConsoleColor.NONE.value);
+        }
+    }
+
+    private void sendUserWatchRequest(String tvtimeUser, String episodeId, PlexWebhook webhook) {
+        boolean success = false;
+        for (int i = 1; i <= 5; i++) {
+            try {
+                log.debug(tvTimeService.watchEpisode(tvtimeUser, episodeId));
+                log.info("{}{} S{}E{} - {}, was successfully marked as watched for {}!{}", ConsoleColor.GREEN.value, webhook.metadata.grandparentTitle, webhook.metadata.parentIndex, webhook.metadata.index, webhook.metadata.title, tvtimeUser, ConsoleColor.NONE.value);
+                success = true;
+                break;
+            } catch (TVTimeException e) {
+                log.warn("{}Connection to TV Time failed for user {}, will retry in {}s, attempts remaining {}{}", ConsoleColor.YELLOW.value, tvtimeUser, (6000 * i) / 1000, 5 - i, ConsoleColor.NONE.value);
+                ThreadUtil.delay(3000 * i);
+                AccountLink tvtimeAccount = tvtimeAccountMap.get(tvtimeUser);
+                tvTimeService.login(tvtimeAccount.getTvtimeUser(), tvtimeAccount.getTvtimePassword());
+                ThreadUtil.delay(3000 * i);
+            } catch (WebClientRequestException e) {
+                log.error("{}Unable to reach https://tvtime.com, please check your internet connection, will retry in 2 minutes.{}", ConsoleColor.YELLOW.value, ConsoleColor.NONE.value);
+                log.debug(e.getMessage(), e);
+                i--;
+                ThreadUtil.delay(120000);
+            } catch (Exception e) {
+                log.error(e.getMessage(), e);
+                break;
             }
+        }
+        if (!success) {
+            log.error("{}Failed to process webhook for for {} S{}E{} - {}{}", ConsoleColor.RED.value, webhook.metadata.grandparentTitle, webhook.metadata.parentIndex, webhook.metadata.index, webhook.metadata.title, ConsoleColor.NONE.value);
         }
     }
 
@@ -190,5 +191,14 @@ public class ShowManagerServiceImpl implements ShowManagerService {
             }
         }
         throw new TVTimeException(ConsoleColor.RED.value + "Unable to connect to TVTime after multiple attempts, please check your internet connection. It is possible http://tvtime.com is unavailable." + ConsoleColor.NONE.value);
+    }
+
+    private boolean hasPlexUser(AccountLink tvTimeAccount, String plexUser) {
+        for (String user : tvTimeAccount.getPlexUsers().split(",")) {
+            if (user.trim().equalsIgnoreCase(plexUser.trim())) {
+                return true;
+            }
+        }
+        return false;
     }
 }
