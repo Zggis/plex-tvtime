@@ -50,6 +50,7 @@ Lastly you will need to pass in a environment variable SPRING_CONFIG_LOCATION wi
 ```
 $ docker run -e SPRING_CONFIG_LOCATION=/config -v "C:/full/path/to/application.yaml":/config -p 8080:8080 zggis/plex-tvtime:latest
 ```
+<img height="200px" alt="logo" src="example-configs/unraid-advanced.PNG?raw=true"/></div>
 The application.yaml file replaces all other configuration, so you no longer need to pass in any of the basic configuration as environment variables, you can set them directly in application.yaml. If you still want to use enviornment variables you can reference them in application.yaml with ${YOUR_ENVIRONMENT_VAR}<br><br>
 If you are using the docker compose file, you will need to specify SPRING_CONFIG_LOCATION and the needed mount in your .env file.
 
