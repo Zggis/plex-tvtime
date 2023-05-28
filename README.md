@@ -14,7 +14,7 @@ You can run Plex-TVTime on Docker locally by using the following command. Replac
 $ docker run -e TVTIME_USER={Your TVTime username} -e TVTIME_PASSWORD={Your TVTime password} -e PLEX_USERS={Plex username(s) to link} -p 8080:8080 zggis/plex-tvtime:latest
 ```
 #### Docker Compose
-Example compose and env files can be found <a href="https://github.com/Zggis/plex-tvtime/tree/5-multi-user-support/example-configs">here.</a>
+Example compose and env files can be found <a href="https://github.com/Zggis/plex-tvtime/tree/master/example-configs">here.</a>
 ```
 $ docker compose up
 ```
@@ -46,10 +46,11 @@ LOGGING_LEVEL | INFO | Set to TRACE or DEBUG for additional logging.
 #### Linking Multiple TVTime Accounts (Only available in v1.1.0+)
 To link multiple TVTime accounts you can create a YAML configuration file following the template here. YAML files are very sensitive to format so make sure you use a text editor that can preserve tabs, spaces, and line endings.<br><br>
 You will need to mount the directory location of your YAML file to the docker container. In Unraid you can add a Path to the configuration, on docker command line you can follow the example below.<br><br>
-Lastly you will need to pass in a environment variable SPRING_CONFIG_LOCATION with the container relevant path of the YAML.<br><br>
+Lastly you will need to pass in a environment variable SPRING_CONFIG_LOCATION with the container relevant path of the YAML.<br>
 ```
 $ docker run -e SPRING_CONFIG_LOCATION=/config -v "C:/full/path/to/application.yaml":/config -p 8080:8080 zggis/plex-tvtime:latest
 ```
+For unraid, your advanced configuration would look like this:<br>
 <img alt="logo" src="example-configs/unraid-advanced.PNG?raw=true"/></div><br><br>
 The application.yaml file replaces all other configuration, so you no longer need to pass in any of the basic configuration as environment variables, you can set them directly in application.yaml. If you still want to use enviornment variables you can reference them in application.yaml with ${YOUR_ENVIRONMENT_VAR}<br><br>
 If you are using the docker compose file, you will need to specify SPRING_CONFIG_LOCATION and the needed mount in your .env file.
