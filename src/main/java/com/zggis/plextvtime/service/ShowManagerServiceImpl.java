@@ -27,14 +27,14 @@ public class ShowManagerServiceImpl implements ShowManagerService {
     @Autowired
     private AccountConfig accountConfig;
 
-    private final Set<String> plexUsers = new HashSet<>();
-
-    private final Set<Show> excludedShows = new HashSet<>();
-
-    private final Set<Show> includedShows = new HashSet<>();
-
     @Autowired
     private TVTimeService tvTimeService;
+
+    private Map<String, Set<String>> plexUsersMap = new HashMap<>();
+
+    private Map<String, Set<Show>> excludedShowsMap = new HashMap<>();
+
+    private Map<String, Set<Show>> includedShowsMap = new HashMap<>();
 
     private final BlockingQueue<PlexWebhook> queue = new LinkedBlockingQueue<>();
 
@@ -42,23 +42,26 @@ public class ShowManagerServiceImpl implements ShowManagerService {
 
     @PostConstruct
     public void init() {
-        for (String user : accountConfig.getAccounts().get(0).getPlexUsers().split(",")) {
-            plexUsers.add(user.toLowerCase());
+        for (AccountLink account : accountConfig.getAccounts()) {
+            plexUsersMap.put(account.getTvtimeUser(), new HashSet<>());
+            excludedShowsMap.put(account.getTvtimeUser(), new HashSet<>());
+            includedShowsMap.put(account.getTvtimeUser(), new HashSet<>());
+            for (String user : accountConfig.getAccounts().get(0).getPlexUsers().split(",")) {
+                plexUsersMap.get(account.getTvtimeUser()).add(user.toLowerCase());
+            }
+            if (StringUtils.hasText(accountConfig.getAccounts().get(0).getPlexShowsExclude()))
+                for (String show : accountConfig.getAccounts().get(0).getPlexShowsExclude().split(",")) {
+                    excludedShowsMap.get(account.getTvtimeUser()).add(new Show(StringUtils.replace(show, "%2C", ",").trim()));
+                }
+            if (StringUtils.hasText(accountConfig.getAccounts().get(0).getPlexShowsInclude()))
+                for (String show : accountConfig.getAccounts().get(0).getPlexShowsInclude().split(",")) {
+                    includedShowsMap.get(account.getTvtimeUser()).add(new Show(StringUtils.replace(show, "%2C", ",").trim()));
+                }
         }
-        if (StringUtils.hasText(accountConfig.getAccounts().get(0).getPlexShowsExclude()))
-            for (String show : accountConfig.getAccounts().get(0).getPlexShowsExclude().split(",")) {
-                excludedShows.add(new Show(StringUtils.replace(show, "%2C", ",").trim()));
-            }
-        if (StringUtils.hasText(accountConfig.getAccounts().get(0).getPlexShowsInclude()))
-            for (String show : accountConfig.getAccounts().get(0).getPlexShowsInclude().split(",")) {
-                includedShows.add(new Show(StringUtils.replace(show, "%2C", ",").trim()));
-            }
-
         for (AccountLink account : accountConfig.getAccounts()) {
             loginUser(account.getTvtimeUser(), account.getTvtimePassword());
             tvtimeAccountMap.put(account.getTvtimeUser(), account);
         }
-
         Thread t1 = new Thread(new WebhookProcessor());
         t1.setName("queue-exec");
         t1.start();
@@ -94,35 +97,10 @@ public class ShowManagerServiceImpl implements ShowManagerService {
         }
     }
 
-    @Override
-    public List<Show> getExcludedShows() {
-        return new ArrayList<>(excludedShows);
-    }
-
-    @Override
-    public List<Show> getIncludedShows() {
-        return new ArrayList<>(includedShows);
-    }
-
     private void processWebhook(PlexWebhook webhook) throws TVTimeException {
-        if (!plexUsers.contains(webhook.account.title.toLowerCase())) {
-            log.info("Ignoring webhook for plex user '{}', only the configured users will be processed", webhook.account.title);
-            return;
-        }
         if (!webhook.metadata.librarySectionType.equals("show")) {
             log.info("Ignoring webhook for library type '{}', only type 'show' will be processed", webhook.metadata.librarySectionType);
             return;
-        }
-        if (!excludedShows.isEmpty()) {
-            if (excludedShows.contains(new Show(webhook.metadata.grandparentTitle))) {
-                log.info("Ignoring webhook for show '{}', its in the excluded list", webhook.metadata.grandparentTitle);
-                return;
-            }
-        } else if (!includedShows.isEmpty()) {
-            if (!includedShows.contains(new Show(webhook.metadata.grandparentTitle))) {
-                log.info("Ignoring webhook for show '{}', its not in the included list", webhook.metadata.grandparentTitle);
-                return;
-            }
         }
         if (!webhook.event.equals("media.scrobble")) {
             log.info("Ignoring webhook for event type '{}', only type media.scrobble will be processed", webhook.event);
@@ -145,6 +123,22 @@ public class ShowManagerServiceImpl implements ShowManagerService {
     }
 
     private void sendUserWatchRequest(String tvtimeUser, String episodeId, PlexWebhook webhook) {
+        log.debug("Checking TVTime account {}...", tvtimeUser);
+        if (!plexUsersMap.get(tvtimeUser).contains(webhook.account.title.toLowerCase())) {
+            log.info("Ignoring webhook from plex user '{}', they are not linked to {}", webhook.account.title, tvtimeUser);
+            return;
+        }
+        if (!excludedShowsMap.get(tvtimeUser).isEmpty()) {
+            if (excludedShowsMap.get(tvtimeUser).contains(new Show(webhook.metadata.grandparentTitle))) {
+                log.info("Ignoring webhook for show '{}', its in the excluded list for {}", webhook.metadata.grandparentTitle, tvtimeUser);
+                return;
+            }
+        } else if (!includedShowsMap.get(tvtimeUser).isEmpty()) {
+            if (!includedShowsMap.get(tvtimeUser).contains(new Show(webhook.metadata.grandparentTitle))) {
+                log.info("Ignoring webhook for show '{}', its not in the included list for {}", webhook.metadata.grandparentTitle, tvtimeUser);
+                return;
+            }
+        }
         boolean success = false;
         for (int i = 1; i <= 5; i++) {
             try {
