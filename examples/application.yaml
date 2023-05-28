@@ -1,0 +1,26 @@
+account-config:
+  accounts:
+    #Add any number of TVTime accounts below
+    #To use an environment variable as the value use ${YOUR_ENVIRONMENT_VARIABLE}
+    #Make sure the '-' is on a line of its own
+    -
+      tvtimeUser: tvtimeUser1
+      tvtimePassword: tvtimePassword1
+      plexUsers: plexUser1,plexUser2,plexUser3
+      plexShowsExclude: Magnum%2C P.I.,The Big Bang Theory
+      plexShowsInclude: # 'plexShowsInclude' is overriden and ignored if 'plexShowsExclude' is set
+    -
+      tvtimeUser: tvtimeUser2
+      tvtimePassword: tvtimePassword2
+      plexUsers: plexUser1
+      #If you want all shows to be included you can omit 'plexShowsExclude' and 'plexShowsInclude' entirely from the user
+    -
+      tvtimeUser: tvtimeUser3
+      tvtimePassword: tvtimePassword3
+      plexUsers: plexUser2,plexUser3
+      plexShowsInclude: Game of Thrones,Breaking Bad
+
+logging:
+  level:
+    com:
+      zggis: ${LOGGING_LEVEL:INFO}
