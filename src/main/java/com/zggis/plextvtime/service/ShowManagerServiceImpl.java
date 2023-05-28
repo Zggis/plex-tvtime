@@ -46,17 +46,24 @@ public class ShowManagerServiceImpl implements ShowManagerService {
             plexUsersMap.put(account.getTvtimeUser(), new HashSet<>());
             excludedShowsMap.put(account.getTvtimeUser(), new HashSet<>());
             includedShowsMap.put(account.getTvtimeUser(), new HashSet<>());
-            for (String user : accountConfig.getAccounts().get(0).getPlexUsers().split(",")) {
+            for (String user : account.getPlexUsers().split(",")) {
                 plexUsersMap.get(account.getTvtimeUser()).add(user.toLowerCase());
             }
-            if (StringUtils.hasText(accountConfig.getAccounts().get(0).getPlexShowsExclude()))
-                for (String show : accountConfig.getAccounts().get(0).getPlexShowsExclude().split(",")) {
+            if (StringUtils.hasText(account.getPlexShowsExclude())) {
+                for (String show : account.getPlexShowsExclude().split(",")) {
                     excludedShowsMap.get(account.getTvtimeUser()).add(new Show(StringUtils.replace(show, "%2C", ",").trim()));
                 }
-            if (StringUtils.hasText(accountConfig.getAccounts().get(0).getPlexShowsInclude()))
-                for (String show : accountConfig.getAccounts().get(0).getPlexShowsInclude().split(",")) {
+            } else {
+                log.warn("{}TVTime user {} has no configured Plex users, no events will be processed for them{}", ConsoleColor.YELLOW.value, account.getTvtimeUser(), ConsoleColor.NONE.value);
+            }
+            if (StringUtils.hasText(account.getPlexShowsInclude())) {
+                for (String show : account.getPlexShowsInclude().split(",")) {
                     includedShowsMap.get(account.getTvtimeUser()).add(new Show(StringUtils.replace(show, "%2C", ",").trim()));
                 }
+                if (StringUtils.hasText(account.getPlexShowsExclude())) {
+                    log.warn("{}Included shows is set for user {}, but will be ignored since excluded shows is also set{}", ConsoleColor.YELLOW.value, account.getTvtimeUser(), ConsoleColor.NONE.value);
+                }
+            }
         }
         for (AccountLink account : accountConfig.getAccounts()) {
             loginUser(account.getTvtimeUser(), account.getTvtimePassword());
