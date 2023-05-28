@@ -1,0 +1,12 @@
+account-config:
+  accounts:
+    -
+      tvtimeUser: ${TVTIME_USER}
+      tvtimePassword: ${TVTIME_PASSWORD}
+      plexUsers: ${PLEX_USERS}
+      plexShowsExclude: ${PLEX_SHOWS_EXCLUDE:}
+      plexShowsInclude: ${PLEX_SHOWS_INCLUDE:}
+logging:
+  level:
+    com:
+      zggis: ${LOGGING_LEVEL:INFO}

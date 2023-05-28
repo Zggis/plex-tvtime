@@ -2,15 +2,10 @@ package com.zggis.plextvtime.service;
 
 import com.zggis.plextvtime.dto.plex.PlexWebhook;
 
-import java.util.List;
 import java.util.Objects;
 
 public interface ShowManagerService {
     void markAsWatched(PlexWebhook webhook);
-
-    List<ShowManagerServiceImpl.Show> getExcludedShows();
-
-    List<ShowManagerServiceImpl.Show> getIncludedShows();
 
     public record Show(String name) {
         @Override

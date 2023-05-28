@@ -1,13 +1,10 @@
 package com.zggis.plextvtime.service;
 
 import com.zggis.plextvtime.exception.TVTimeException;
-import com.zggis.plextvtime.util.ConsoleColor;
-import com.zggis.plextvtime.util.ThreadUtil;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
@@ -32,13 +29,11 @@ public class TVTimeServiceImpl implements TVTimeService {
     private static final String TVST_REMEMBER = "tvstRemember";
     private static final String SYMFONY = "symfony";
     private static final String DELETED = "deleted";
-    private final Map<String, String> cookies = new HashMap<>();
+
+    private final Map<String, Map<String, String>> userCookies = new HashMap<>();
     private final WebClient client;
-    @Value("${tvtime.user}")
-    private String user;
-    @Value("${tvtime.password}")
-    private String password;
-    private String userId;
+
+    private final Map<String, String> userIdMap = new HashMap<>();
 
     public TVTimeServiceImpl() {
         client = WebClient.builder()
@@ -52,25 +47,11 @@ public class TVTimeServiceImpl implements TVTimeService {
 
     @PostConstruct
     public void init() {
-        for (int i = 1; i <= 5; i++) {
-            try {
-                login();
-                fetchProfile();
-                return;
-            } catch (TVTimeException e) {
-                log.error(e.getMessage());
-                System.exit(1);
-            } catch (Exception e) {
-                log.warn(e.getMessage(), e);
-                log.warn("{}Connection to TV Time failed, will retry in {}s, attempts remaining {}{}", ConsoleColor.YELLOW.value, (3000 * i) / 1000, 5 - i, ConsoleColor.NONE.value);
-                ThreadUtil.delay(3000 * i);
-            }
-        }
-        throw new TVTimeException(ConsoleColor.RED.value + "Unable to connect to TVTime after multiple attempts, please check your internet connection. It is possible http://tvtime.com is unavailable." + ConsoleColor.NONE.value);
+
     }
 
     @Override
-    public void login() {
+    public void login(String user, String password) {
         WebClient.UriSpec<WebClient.RequestBodySpec> uriSpec = client.post();
         WebClient.RequestBodySpec bodySpec = uriSpec.uri("/signin");
         LinkedMultiValueMap<String, String> map = new LinkedMultiValueMap<>();
@@ -84,47 +65,50 @@ public class TVTimeServiceImpl implements TVTimeService {
                                 response.cookies()
                         )
         );
-        this.cookies.clear();
         MultiValueMap<String, String> payloadCookies = mono.block();
         if (payloadCookies != null) {
+            Map<String, String> cookies = new HashMap<>();
             payloadCookies.forEach((k, v) ->
                     {
-                        if (TVST_REMEMBER.equals(k) || SYMFONY.equals(k))
-                            this.cookies.put(k, parseCookieValue(k, v.toString()));
+                        if (TVST_REMEMBER.equals(k) || SYMFONY.equals(k)) {
+                            cookies.put(k, parseCookieValue(k, v.toString()));
+                        }
                     }
             );
-            if (!this.cookies.containsKey(TVST_REMEMBER) || !this.cookies.containsKey(SYMFONY)) {
-                throw new TVTimeException("Your TV Time credentials are invalid");
+            this.userCookies.put(user, cookies);
+            if (!this.userCookies.get(user).containsKey(TVST_REMEMBER) || !this.userCookies.get(user).containsKey(SYMFONY)) {
+                throw new TVTimeException("TV Time credentials for " + user + " are invalid");
             }
-            log.debug("Cookies updated [tvstRemember={} symfony={}]", cookies.get(TVST_REMEMBER), cookies.get(SYMFONY));
+            log.debug("Cookies updated for user {} [tvstRemember={} symfony={}]", user, userCookies.get(user).get(TVST_REMEMBER), userCookies.get(user).get(SYMFONY));
         }
     }
 
-    private void fetchProfile() throws TVTimeException, IOException {
-        if (!isLoggedIn())
+    @Override
+    public void fetchProfile(String user) throws TVTimeException, IOException {
+        if (!isLoggedIn(user))
             throw new TVTimeException("You are not logged in");
         Document doc;
         doc = Jsoup.connect("https://www.tvtime.com/en")
-                .cookie(TVST_REMEMBER, cookies.get(TVST_REMEMBER))
-                .cookie(SYMFONY, cookies.get(SYMFONY))
+                .cookie(TVST_REMEMBER, userCookies.get(user).get(TVST_REMEMBER))
+                .cookie(SYMFONY, userCookies.get(user).get(SYMFONY))
                 .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
                 .header("Accept-Language", "*")
                 .get();
-        userId = doc.selectFirst("li.profile")
+        userIdMap.put(user, doc.selectFirst("li.profile")
                 .selectFirst("a").attr("href")
-                .replace("/en/user/", "").replace("/profile", "");
+                .replace("/en/user/", "").replace("/profile", ""));
 
     }
 
     @Override
-    public String watchEpisode(String episodeId) throws TVTimeException {
-        if (!isLoggedIn())
+    public String watchEpisode(String user, String episodeId) throws TVTimeException {
+        if (!isLoggedIn(user))
             throw new TVTimeException("You are not logged in");
         WebClient.UriSpec<WebClient.RequestBodySpec> uriSpec = client.put();
         WebClient.RequestBodySpec bodySpec = uriSpec.uri("/watched_episodes")
-                .cookie(TVST_REMEMBER, cookies.get(TVST_REMEMBER))
-                .cookie(SYMFONY, cookies.get(SYMFONY))
-                .cookie("user_id", userId)
+                .cookie(TVST_REMEMBER, userCookies.get(user).get(TVST_REMEMBER))
+                .cookie(SYMFONY, userCookies.get(user).get(SYMFONY))
+                .cookie("user_id", userIdMap.get(user))
                 .header("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
                 .header("Accept", "application/json, text/javascript, */*; q=0.01");
         WebClient.RequestHeadersSpec<?> headersSpec = bodySpec.bodyValue("episode_id=" + episodeId);
@@ -136,29 +120,29 @@ public class TVTimeServiceImpl implements TVTimeService {
         );
         Tuple2<String, MultiValueMap<String, String>> payload = mono.block();
         if (payload != null) {
-            updateCookies(payload.getT2());
+            updateCookies(user, payload.getT2());
             return payload.getT1();
         }
         return null;
     }
 
-    private void updateCookies(MultiValueMap<String, String> newCookies) throws TVTimeException {
+    private void updateCookies(String user, MultiValueMap<String, String> newCookies) throws TVTimeException {
         if (!CollectionUtils.isEmpty(newCookies)) {
             newCookies.forEach((k, v) ->
                     {
                         if (TVST_REMEMBER.equals(k) || SYMFONY.equals(k))
-                            this.cookies.put(k, parseCookieValue(k, v.toString()));
+                            this.userCookies.get(user).put(k, parseCookieValue(k, v.toString()));
                     }
             );
-            log.debug("Cookies updated : [tvstRemember={} symfony={}]", this.cookies.get(TVST_REMEMBER), this.cookies.get(SYMFONY));
-            if (!StringUtils.hasText(cookies.get(TVST_REMEMBER)) || DELETED.equals(cookies.get(TVST_REMEMBER))) {
+            log.debug("Cookies updated for {} : [tvstRemember={} symfony={}]", user, this.userCookies.get(user).get(TVST_REMEMBER), this.userCookies.get(user).get(SYMFONY));
+            if (!StringUtils.hasText(userCookies.get(user).get(TVST_REMEMBER)) || DELETED.equals(userCookies.get(user).get(TVST_REMEMBER))) {
                 throw new TVTimeException("Session has expired, you must login again");
             }
         }
     }
 
-    private boolean isLoggedIn() {
-        return StringUtils.hasText(cookies.get(TVST_REMEMBER)) && !DELETED.equals(cookies.get(TVST_REMEMBER)) && StringUtils.hasText(cookies.get(SYMFONY));
+    private boolean isLoggedIn(String user) {
+        return StringUtils.hasText(userCookies.get(user).get(TVST_REMEMBER)) && !DELETED.equals(userCookies.get(user).get(TVST_REMEMBER)) && StringUtils.hasText(userCookies.get(user).get(SYMFONY));
     }
 
     private String parseCookieValue(String k, String v) {

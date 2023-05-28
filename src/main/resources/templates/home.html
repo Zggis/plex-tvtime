@@ -12,22 +12,22 @@
             crossorigin="anonymous"></script>
     <meta name="theme-color" content="#712cf9">
 
-    <!-- Custom styles for this template -->
-    <link href="cover.css" rel="stylesheet">
     <script src="common.js"></script>
 </head>
 
-<body class="d-flex h-100 text-center text-bg-dark">
+<body class="d-flex h-100 text-center text-white" style="background-color:#43484d">
 
-<div class="cover-container d-flex w-100 h-100 p-3 mx-auto flex-column">
-    <header class="mb-auto">
+<div class="container">
+    <header class="mb-auto text-start">
         <div>
-            <h3 class="float-md-start mb-0">Plex-TVTime</h3>
+            <h3><span><img src="favicon.png" width="30"></span> Plex-TVTime</h3>
         </div>
     </header>
 
     <main class="px-3">
-        <h1>Plex Webhook</h1>
+        <h1><span> <img src="plex.png"
+                        width="50px"></span>Plex
+            Webhook</h1>
         <p class="lead">
         <div class="input-group mb-3">
             <input id=webhookUrl type="text" class="form-control"
@@ -35,44 +35,53 @@
                    aria-describedby="copyBtn" disabled>
         </div>
         </p>
-        <p class="lead">
-        <table class="table table-dark table-striped text-start">
-            <thead>
-            <tr>
-                <th scope="col">Setting</th>
-                <th scope="col">Value</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr>
-                <td>TVTime User</td>
-                <td th:text="${tvTimeUser}"></td>
-            </tr>
-            <tr>
-                <td>Plex Users</td>
-                <td th:text="${plexUsers}"></td>
-            </tr>
-            <tr>
-                <td>Excluded Shows</td>
-                <td th:if="${plexExclude}" th:text="${plexExclude}"></td>
-                <td th:if="${plexExclude == null}">
-                    <ul>
-                        <li th:each="show : ${excludedShows}" th:text="${show.name}"></li>
-                    </ul>
-                </td>
-            </tr>
-            <tr>
-                <td>Included Shows</td>
-                <td th:if="${plexInclude}" th:text="${plexInclude}"></td>
-                <td th:if="${plexInclude == null}">
-                    <ul>
-                        <li th:each="show : ${includedShows}" th:text="${show.name}"></li>
-                    </ul>
-                </td>
-            </tr>
-            </tbody>
-        </table>
-        </p>
+
+        <div class="row row-cols-1 row-cols-md-3 g-4 mb-4">
+
+            <div th:each="account : ${accounts}" class="col">
+                <div class="card text-bg-dark border border-0">
+                    <div class="card-body px-2">
+                        <h5 th:inline="text" class="card-title text-start"><span><img src="tvtime.png"></span>
+                            [[${account.tvtimeUser}]]</h5>
+                        <table class="table table-dark table-striped text-start">
+                            <thead class="text-center">
+                            <tr>
+                                <th>Plex Users</th>
+                                <th th:if="${account.showExcluded}">Excluded Shows</th>
+                                <th th:if="${account.showIncluded}">Only Included Shows</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr>
+                                <td>
+                                    <ul>
+                                        <li th:each="plexUser : ${account.plexUsers}" th:text="${plexUser}">
+                                            [PLEX_USER]
+                                        </li>
+                                    </ul>
+                                </td>
+                                <td th:if="${account.showExcluded}">
+                                    <ul>
+                                        <li th:each="show : ${account.excludedShows}" th:text="${show}">
+                                            [SHOW]
+                                        </li>
+                                    </ul>
+                                </td>
+                                <td th:if="${account.showIncluded}">
+                                    <ul>
+                                        <li th:each="show : ${account.includedShows}" th:text="${show}">
+                                            [SHOW]
+                                        </li>
+                                    </ul>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </main>
 
     <footer class="mt-auto text-white-50">
