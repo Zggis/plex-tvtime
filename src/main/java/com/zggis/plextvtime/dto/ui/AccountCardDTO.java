@@ -28,13 +28,15 @@ public class AccountCardDTO {
         this.tvtimeUser = link.getTvtimeUser();
         this.plexUsers = link.getPlexUsers().split(",");
 
-        if(!StringUtils.hasText(link.getPlexShowsExclude()) && StringUtils.hasText(link.getPlexShowsInclude())){
+        if (!StringUtils.hasText(link.getPlexShowsExclude()) && StringUtils.hasText(link.getPlexShowsInclude())) {
             showExcluded = false;
             showIncluded = true;
+        } else if (!StringUtils.hasText(link.getPlexShowsExclude())) {
+            showExcluded = false;
+            showIncluded = false;
         }
         this.includedShows = link.getPlexShowsInclude().split(",");
         this.excludedShows = link.getPlexShowsExclude().split(",");
-
 
 
     }
