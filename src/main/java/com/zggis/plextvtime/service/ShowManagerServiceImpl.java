@@ -42,6 +42,7 @@ public class ShowManagerServiceImpl implements ShowManagerService {
 
     @PostConstruct
     public void init() {
+        /*
         for (String user : accountConfig.getAccounts().get(0).getPlexUsers().split(",")) {
             plexUsers.add(user.toLowerCase());
         }
@@ -62,6 +63,7 @@ public class ShowManagerServiceImpl implements ShowManagerService {
         Thread t1 = new Thread(new WebhookProcessor());
         t1.setName("queue-exec");
         t1.start();
+         */
     }
 
     private class WebhookProcessor implements Runnable {
