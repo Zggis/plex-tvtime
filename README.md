@@ -14,7 +14,7 @@ You can run Plex-TVTime on Docker locally by using the following command. Replac
 $ docker run -e TVTIME_USER={Your TVTime username} -e TVTIME_PASSWORD={Your TVTime password} -e PLEX_USERS={Plex username(s) to link} -p 8080:8080 zggis/plex-tvtime:latest
 ```
 #### Docker Compose
-Example compose and env files can be found here.
+Example compose and env files can be found <a href="https://github.com/Zggis/plex-tvtime/tree/5-multi-user-support/example-configs">here.</a>
 ```
 $ docker compose up
 ```
