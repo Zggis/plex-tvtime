@@ -1,0 +1,12 @@
+version: '3'
+services:
+  plex-tvtime:
+    image: zggis/plex-tvtime:latest
+    env_file: 
+      - .env
+    ports:
+      - 8080:8080
+    #Volume only needed for advanced configuration (multiple TVTime users)
+    volumes:
+      - "C:/location/of/application.yaml":/config
+
