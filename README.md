@@ -13,6 +13,11 @@ You can run Plex-TVTime on Docker locally by using the following command. Replac
 ```
 $ docker run -e TVTIME_USER={Your TVTime username} -e TVTIME_PASSWORD={Your TVTime password} -e PLEX_USERS={Plex username(s) to link} -p 8080:8080 zggis/plex-tvtime:latest
 ```
+#### Docker Compose
+Example compose and env files can be found here.
+```
+$ docker compose up
+```
 
 ### Usage
 Navigating to the home page http://[host]:[port] in your browser will display the webhook URL you can enter in Plex > Settings > Webhooks. It should be http://[host]:[port]/webhook/plex<br><br>
