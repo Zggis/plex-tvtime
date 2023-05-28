@@ -30,11 +30,11 @@ public class ShowManagerServiceImpl implements ShowManagerService {
     @Autowired
     private TVTimeService tvTimeService;
 
-    private Map<String, Set<String>> plexUsersMap = new HashMap<>();
+    private final Map<String, Set<String>> plexUsersMap = new HashMap<>();
 
-    private Map<String, Set<Show>> excludedShowsMap = new HashMap<>();
+    private final Map<String, Set<Show>> excludedShowsMap = new HashMap<>();
 
-    private Map<String, Set<Show>> includedShowsMap = new HashMap<>();
+    private final Map<String, Set<Show>> includedShowsMap = new HashMap<>();
 
     private final BlockingQueue<PlexWebhook> queue = new LinkedBlockingQueue<>();
 
@@ -115,9 +115,8 @@ public class ShowManagerServiceImpl implements ShowManagerService {
         }
         if (StringUtils.hasText(episodeId)) {
             for (AccountLink account : accountConfig.getAccounts()) {
-                if (hasPlexUser(account, webhook.account.title)) {
+                if (hasPlexUser(account, webhook.account.title))
                     sendUserWatchRequest(account.getTvtimeUser(), episodeId, webhook);
-                }
             }
         }
     }
