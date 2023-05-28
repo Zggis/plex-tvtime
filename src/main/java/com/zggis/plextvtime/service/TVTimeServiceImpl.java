@@ -134,7 +134,7 @@ public class TVTimeServiceImpl implements TVTimeService {
                             this.userCookies.get(user).put(k, parseCookieValue(k, v.toString()));
                     }
             );
-            log.debug("Cookies updated for {} : [tvstRemember={} symfony={}]", user, this.userCookies.get(user).get(TVST_REMEMBER), this.userCookies.get(user).get(SYMFONY));
+            log.trace("Cookies updated for {}", user);
             if (!StringUtils.hasText(userCookies.get(user).get(TVST_REMEMBER)) || DELETED.equals(userCookies.get(user).get(TVST_REMEMBER))) {
                 throw new TVTimeException("Session has expired, you must login again");
             }
