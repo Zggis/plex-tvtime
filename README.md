@@ -48,7 +48,7 @@ To link multiple TVTime accounts you can create a YAML configuration file follow
 You will need to mount the directory location of your YAML file to the docker container. In Unraid you can add a Path to the configuration, on docker command line you can follow the example below.<br><br>
 Lastly you will need to pass in a environment variable SPRING_CONFIG_LOCATION with the container relevant path of the YAML.<br>
 ```
-$ docker run -e SPRING_CONFIG_LOCATION=/config -v "C:/full/path/to/application.yaml":/config -p 8080:8080 zggis/plex-tvtime:latest
+$ docker run -e SPRING_CONFIG_LOCATION=/config/application.yaml -v "C:/absolute/path/to/yaml/":/config -p 8080:8080 zggis/plex-tvtime:latest
 ```
 For unraid, your advanced configuration would look like this:<br>
 <img alt="logo" src="example-configs/unraid-advanced.PNG?raw=true"/></div><br><br>
