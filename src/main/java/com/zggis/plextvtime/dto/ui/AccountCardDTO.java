@@ -6,6 +6,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.util.StringUtils;
 
+import java.util.Arrays;
+
 @NoArgsConstructor
 @Getter
 @Setter
@@ -34,9 +36,11 @@ public class AccountCardDTO {
             showIncluded = false;
         }
         if (StringUtils.hasText(link.getPlexShowsInclude()))
-            this.includedShows = link.getPlexShowsInclude().split(",");
+            this.includedShows = Arrays.stream(link.getPlexShowsInclude().split(","))
+                    .map(show -> StringUtils.replace(show.trim(), "%2C", ",")).toArray(String[]::new);
         if (StringUtils.hasText(link.getPlexShowsExclude()))
-            this.excludedShows = link.getPlexShowsExclude().split(",");
+            this.excludedShows = Arrays.stream(link.getPlexShowsExclude().split(","))
+                    .map(show -> StringUtils.replace(show.trim(), "%2C", ",")).toArray(String[]::new);
 
 
     }
