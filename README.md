@@ -53,7 +53,7 @@ $ docker run -e SPRING_CONFIG_LOCATION=/config/application.yaml -v "C:/absolute/
 For unraid, your advanced configuration would look like this:<br>
 <img alt="logo" src="example-configs/unraid-advanced.PNG?raw=true"/></div><br><br>
 The application.yaml file replaces all other configuration, so you no longer need to pass in any of the basic configuration as environment variables, you can set them directly in application.yaml. If you still want to use enviornment variables you can reference them in application.yaml with ${YOUR_ENVIRONMENT_VAR}<br><br>
-If you are using the docker compose file, you will need to specify SPRING_CONFIG_LOCATION and the needed mount in your .env file.
+If you are using the docker compose file, you will need to specify SPRING_CONFIG_LOCATION in your <a href="https://github.com/Zggis/plex-tvtime/blob/master/example-configs/.env">.env file</a> and the needed mount in your <a href="https://github.com/Zggis/plex-tvtime/blob/master/example-configs/docker-compose.yaml">compose file.</a>
 
 ### Troubleshooting
 Please check the logs, as described above many webhook events are intentionally ignored depending on configuration. If you can't resolve on your own open an <a href="https://github.com/Zggis/plex-tvtime/issues/new">issue</a> and I will help. If you open an issue please set the LOGGING_LEVEL to TRACE and include the relevant logs in your issue, the app does not create its own logfile, so you can just copy them from the console logs.
