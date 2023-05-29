@@ -124,18 +124,17 @@ public class ShowManagerServiceImpl implements ShowManagerService {
         }
         if (StringUtils.hasText(episodeId)) {
             for (AccountLink account : accountConfig.getAccounts()) {
-                if (hasPlexUser(account, webhook.account.title))
+                if (hasPlexUser(account, webhook.account.title)) {
                     sendUserWatchRequest(account.getTvtimeUser(), episodeId, webhook);
+                } else {
+                    log.info("Ignoring webhook from plex user '{}', they are not linked to {}", webhook.account.title, account.getTvtimeUser());
+                }
             }
         }
     }
 
     private void sendUserWatchRequest(String tvtimeUser, String episodeId, PlexWebhook webhook) {
         log.debug("Checking TVTime account {}...", tvtimeUser);
-        if (!plexUsersMap.get(tvtimeUser).contains(webhook.account.title.toLowerCase())) {
-            log.info("Ignoring webhook from plex user '{}', they are not linked to {}", webhook.account.title, tvtimeUser);
-            return;
-        }
         if (!excludedShowsMap.get(tvtimeUser).isEmpty()) {
             if (excludedShowsMap.get(tvtimeUser).contains(new Show(webhook.metadata.grandparentTitle))) {
                 log.info("Ignoring webhook for show '{}', its in the excluded list for {}", webhook.metadata.grandparentTitle, tvtimeUser);
