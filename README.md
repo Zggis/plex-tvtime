@@ -5,6 +5,9 @@
 ### Description
 Plex-TVTime is a Plex webhook handler that automatically updates your TVTime watch history. TV episodes are automatically marked as watched once you complete them on Plex.
 
+### Requirements
+The Plex server owner must have an active Plex Pass subscription for webhooks to be enabled.
+
 ### Installing
 #### Unraid
 To install Plex-TVTime on Unraid you can install the docker container through the community applications.
