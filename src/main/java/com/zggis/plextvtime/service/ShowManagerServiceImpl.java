@@ -115,7 +115,6 @@ public class ShowManagerServiceImpl implements ShowManagerService {
             log.info("Ignoring webhook for event type '{}', only type media.scrobble will be processed", webhook.event);
             return;
         }
-        log.info("{}Processing webhook for {} S{}E{} - {}{}", ConsoleColor.CYAN.value, webhook.metadata.grandparentTitle, webhook.metadata.parentIndex, webhook.metadata.index, webhook.metadata.title, ConsoleColor.NONE.value);
         String episodeId = null;
         for (Guid guid : webhook.metadata.guid) {
             if (guid.id.contains("tvdb")) {
@@ -123,18 +122,21 @@ public class ShowManagerServiceImpl implements ShowManagerService {
             }
         }
         if (StringUtils.hasText(episodeId)) {
+            log.info("{}Processing webhook for {} S{}E{} - {}{}", ConsoleColor.CYAN.value, webhook.metadata.grandparentTitle, webhook.metadata.parentIndex, webhook.metadata.index, webhook.metadata.title, ConsoleColor.NONE.value);
             for (AccountLink account : accountConfig.getAccounts()) {
+                log.debug("Checking TVTime account {}...", account.getTvtimeUser());
                 if (hasPlexUser(account, webhook.account.title)) {
                     sendUserWatchRequest(account.getTvtimeUser(), episodeId, webhook);
                 } else {
                     log.info("Ignoring webhook from plex user '{}', they are not linked to {}", webhook.account.title, account.getTvtimeUser());
                 }
             }
+        } else {
+            log.warn("{}Cannot process webhook because it does not have an TVDB episode id associated with it{}", ConsoleColor.YELLOW.value, ConsoleColor.NONE.value);
         }
     }
 
     private void sendUserWatchRequest(String tvtimeUser, String episodeId, PlexWebhook webhook) {
-        log.debug("Checking TVTime account {}...", tvtimeUser);
         if (!excludedShowsMap.get(tvtimeUser).isEmpty()) {
             if (excludedShowsMap.get(tvtimeUser).contains(new Show(webhook.metadata.grandparentTitle))) {
                 log.info("Ignoring webhook for show '{}', its in the excluded list for {}", webhook.metadata.grandparentTitle, tvtimeUser);
