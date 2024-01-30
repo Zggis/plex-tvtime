@@ -275,12 +275,10 @@ public class ShowManagerServiceImpl implements ShowManagerService {
         ThreadUtil.delay(3000 * i);
       }
     }
-    /*
-    TODO Enable retries
     throw new TVTimeException(
         ConsoleColor.RED.value
             + "Unable to connect to TVTime after multiple attempts, please check your internet connection. It is possible http://tvtime.com is unavailable."
-            + ConsoleColor.NONE.value);*/
+            + ConsoleColor.NONE.value);
   }
 
   private boolean hasPlexUser(AccountLink tvTimeAccount, String plexUser) {

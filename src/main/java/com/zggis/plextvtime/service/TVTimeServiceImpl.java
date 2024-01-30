@@ -34,7 +34,7 @@ public class TVTimeServiceImpl implements TVTimeService {
 
   @Override
   public void login(String user, String password) {
-    System.setProperty("webdriver.chrome.driver", driverLocation);
+    //System.setProperty("webdriver.chrome.driver", driverLocation);
     System.setProperty("webdriver.chrome.whitelistedIps", "");
     ChromeOptions options = new ChromeOptions();
     options.addArguments("--headless","--no-sandbox","--disable-dev-shm-usage","--disable-setuid-sandbox");
