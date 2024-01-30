@@ -1,159 +1,131 @@
 package com.zggis.plextvtime.service;
 
 import com.zggis.plextvtime.exception.TVTimeException;
-import jakarta.annotation.PostConstruct;
+import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
+import org.javatuples.Triplet;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
-import org.springframework.util.CollectionUtils;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 import org.springframework.util.StringUtils;
-import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
-import reactor.util.function.Tuple2;
-import reactor.util.function.Tuples;
-
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
 @Component
 @Slf4j
 public class TVTimeServiceImpl implements TVTimeService {
 
-    private static final String TVST_REMEMBER = "tvstRemember";
-    private static final String SYMFONY = "symfony";
-    private static final String DELETED = "deleted";
+  @Value("${selenium.driver_location}")
+  private String driverLocation;
 
-    private final Map<String, Map<String, String>> userCookies = new HashMap<>();
-    private final WebClient client;
+  @Value("${selenium.browser_location}")
+  private String browserLocation;
 
-    private final Map<String, String> userIdMap = new HashMap<>();
+  private final Map<String, Triplet<String, String, JSONObject>> userAuth = new HashMap<>();
 
-    public TVTimeServiceImpl() {
-        client = WebClient.builder()
-                .baseUrl("https://www.tvtime.com")
-                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                .codecs(configurer -> configurer
-                        .defaultCodecs()
-                        .maxInMemorySize(16 * 1024 * 1024))
-                .build();
+  @Override
+  public void login(String user, String password) {
+    System.setProperty("webdriver.chrome.driver", driverLocation);
+    System.setProperty("webdriver.chrome.whitelistedIps", "");
+    ChromeOptions options = new ChromeOptions();
+    options.addArguments("--headless","--no-sandbox","--disable-dev-shm-usage","--disable-setuid-sandbox");
+    //options.setBinary(browserLocation);
+    options.addArguments("--remote-allow-origins=*");
+    WebDriver driver = new ChromeDriver(options);
+    driver.get("https://app.tvtime.com/welcome?mode=auth");
+    driver.manage().timeouts().implicitlyWait(Duration.ofMillis(5000));
+    try {
+      Thread.sleep(8000);
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
     }
-
-    @PostConstruct
-    public void init() {
-
+    JavascriptExecutor js = (JavascriptExecutor) driver;
+    String initialJwtToken =
+        (String)
+            js.executeScript(
+                String.format("return window.localStorage.getItem('%s');", "flutter.jwtToken"));
+    driver.close();
+    initialJwtToken = initialJwtToken.substring(1, initialJwtToken.length() - 1);
+    WebClient client = getWebClient("https://beta-app.tvtime.com");
+    WebClient.UriSpec<WebClient.RequestBodySpec> uriSpec = client.post();
+    WebClient.RequestBodySpec bodySpec = uriSpec.uri("/sidecar?o=https://auth.tvtime.com/v1/login");
+    JSONObject credentials = new JSONObject();
+    credentials.put("username", user);
+    credentials.put("password", password);
+    WebClient.RequestHeadersSpec<?> requestHeadersSpec = bodySpec.bodyValue(credentials.toString());
+    requestHeadersSpec
+        .header(HttpHeaders.AUTHORIZATION, "Bearer " + initialJwtToken)
+        .header(
+            HttpHeaders.CONTENT_LENGTH, String.valueOf(credentials.toString().getBytes().length))
+        .retrieve();
+    Mono<String> response = requestHeadersSpec.retrieve().bodyToMono(String.class);
+    try {
+      JSONObject responsePayload = new JSONObject(response.block());
+      Triplet jwtTriple =
+          new Triplet(
+              responsePayload.getJSONObject("data").getString("jwt_token"),
+              responsePayload.getJSONObject("data").getString("jwt_refresh_token"),
+              credentials);
+      userAuth.put(user, jwtTriple);
+      log.debug(
+          "JWT tokens updated for user {} [jwt_token={} jwt_refresh_token={}]",
+          user,
+          jwtTriple.getValue0(),
+          jwtTriple.getValue1());
+    } catch (JSONException e) {
+      log.error(e.getMessage(), e);
     }
+  }
 
-    @Override
-    public void login(String user, String password) {
-        WebClient.UriSpec<WebClient.RequestBodySpec> uriSpec = client.post();
-        WebClient.RequestBodySpec bodySpec = uriSpec.uri("/signin");
-        LinkedMultiValueMap<String, String> map = new LinkedMultiValueMap<>();
-        map.add("username", user);
-        map.add("password", password);
-        WebClient.RequestHeadersSpec<?> headersSpec = bodySpec.body(
-                BodyInserters.fromMultipartData(map));
-        Mono<MultiValueMap> mono = headersSpec.exchangeToMono(response ->
-                response.bodyToMono(String.class)
-                        .map(stringBody ->
-                                response.cookies()
-                        )
-        );
-        MultiValueMap<String, String> payloadCookies = mono.block();
-        if (payloadCookies != null) {
-            Map<String, String> cookies = new HashMap<>();
-            payloadCookies.forEach((k, v) ->
-                    {
-                        if (TVST_REMEMBER.equals(k) || SYMFONY.equals(k)) {
-                            cookies.put(k, parseCookieValue(k, v.toString()));
-                        }
-                    }
-            );
-            this.userCookies.put(user, cookies);
-            if (!this.userCookies.get(user).containsKey(TVST_REMEMBER) || !this.userCookies.get(user).containsKey(SYMFONY)) {
-                throw new TVTimeException("TV Time credentials for " + user + " are invalid");
-            }
-            log.debug("Cookies updated for user {} [tvstRemember={} symfony={}]", user, userCookies.get(user).get(TVST_REMEMBER), userCookies.get(user).get(SYMFONY));
-        }
+  @Override
+  public String watchEpisode(String user, String episodeId) throws TVTimeException {
+    if (!isLoggedIn(user)) throw new TVTimeException("You are not logged in");
+    JSONObject responsePayload = null;
+    WebClient client = getWebClient("https://app.tvtime.com");
+    WebClient.UriSpec<WebClient.RequestBodySpec> uriSpec = client.post();
+    WebClient.RequestBodySpec bodySpec =
+        uriSpec.uri(
+            "/sidecar?o=https://api2.tozelabs.com/v2/watched_episodes/episode/"
+                + episodeId
+                + "&is_rewatch=0");
+    WebClient.RequestHeadersSpec<?> requestHeadersSpec =
+        bodySpec.bodyValue(userAuth.get(user).getValue2().toString());
+    requestHeadersSpec
+        .header(HttpHeaders.AUTHORIZATION, "Bearer " + userAuth.get(user).getValue0())
+        .header(
+            HttpHeaders.CONTENT_LENGTH,
+            String.valueOf(userAuth.get(user).getValue2().toString().getBytes().length))
+        .header(HttpHeaders.HOST, "app.tvtime.com:80")
+        .retrieve();
+    Mono<String> response = requestHeadersSpec.retrieve().bodyToMono(String.class);
+    try {
+      responsePayload = new JSONObject(response.block());
+    } catch (JSONException e) {
+      log.error(e.getMessage(), e);
     }
+    return responsePayload.toString();
+  }
 
-    @Override
-    public void fetchProfile(String user) throws TVTimeException, IOException {
-        if (!isLoggedIn(user))
-            throw new TVTimeException("You are not logged in");
-        Document doc;
-        doc = Jsoup.connect("https://www.tvtime.com/en")
-                .cookie(TVST_REMEMBER, userCookies.get(user).get(TVST_REMEMBER))
-                .cookie(SYMFONY, userCookies.get(user).get(SYMFONY))
-                .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
-                .header("Accept-Language", "*")
-                .get();
-        userIdMap.put(user, doc.selectFirst("li.profile")
-                .selectFirst("a").attr("href")
-                .replace("/en/user/", "").replace("/profile", ""));
+  private boolean isLoggedIn(String user) {
+    return userAuth.get(user) != null && StringUtils.hasText(userAuth.get(user).getValue0());
+  }
 
-    }
-
-    @Override
-    public String watchEpisode(String user, String episodeId) throws TVTimeException {
-        if (!isLoggedIn(user))
-            throw new TVTimeException("You are not logged in");
-        WebClient.UriSpec<WebClient.RequestBodySpec> uriSpec = client.put();
-        WebClient.RequestBodySpec bodySpec = uriSpec.uri("/watched_episodes")
-                .cookie(TVST_REMEMBER, userCookies.get(user).get(TVST_REMEMBER))
-                .cookie(SYMFONY, userCookies.get(user).get(SYMFONY))
-                .cookie("user_id", userIdMap.get(user))
-                .header("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
-                .header("Accept", "application/json, text/javascript, */*; q=0.01");
-        WebClient.RequestHeadersSpec<?> headersSpec = bodySpec.bodyValue("episode_id=" + episodeId);
-        Mono<Tuple2> mono = headersSpec.exchangeToMono(response ->
-                response.bodyToMono(String.class)
-                        .map(stringBody -> Tuples.of(stringBody, response.cookies())
-
-                        )
-        );
-        Tuple2<String, MultiValueMap<String, String>> payload = mono.block();
-        if (payload != null) {
-            updateCookies(user, payload.getT2());
-            return payload.getT1();
-        }
-        return null;
-    }
-
-    private void updateCookies(String user, MultiValueMap<String, String> newCookies) throws TVTimeException {
-        if (!CollectionUtils.isEmpty(newCookies)) {
-            newCookies.forEach((k, v) ->
-                    {
-                        if (TVST_REMEMBER.equals(k) || SYMFONY.equals(k))
-                            this.userCookies.get(user).put(k, parseCookieValue(k, v.toString()));
-                    }
-            );
-            log.trace("Cookies updated for {}", user);
-            if (!StringUtils.hasText(userCookies.get(user).get(TVST_REMEMBER)) || DELETED.equals(userCookies.get(user).get(TVST_REMEMBER))) {
-                throw new TVTimeException("Session has expired, you must login again");
-            }
-        }
-    }
-
-    private boolean isLoggedIn(String user) {
-        return StringUtils.hasText(userCookies.get(user).get(TVST_REMEMBER)) && !DELETED.equals(userCookies.get(user).get(TVST_REMEMBER)) && StringUtils.hasText(userCookies.get(user).get(SYMFONY));
-    }
-
-    private String parseCookieValue(String k, String v) {
-        if (StringUtils.hasText(v)) {
-            String[] params = v.split(" ");
-            for (String param : params) {
-                if (param.contains(k) && !param.contains(DELETED)) {
-                    return param.substring(param.indexOf('=') + 1, param.indexOf(';'));
-                }
-            }
-        }
-        return null;
-    }
+  private WebClient getWebClient(String baseUrl) {
+    WebClient client =
+        WebClient.builder()
+            .baseUrl(baseUrl)
+            .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+            .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(16 * 1024 * 1024))
+            .build();
+    return client;
+  }
 }
