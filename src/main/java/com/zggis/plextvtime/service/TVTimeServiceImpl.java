@@ -4,6 +4,8 @@ import com.zggis.plextvtime.exception.TVTimeException;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
+
+import com.zggis.plextvtime.util.ConsoleColor;
 import lombok.extern.slf4j.Slf4j;
 import org.javatuples.Triplet;
 import org.json.JSONException;
@@ -24,35 +26,51 @@ import reactor.core.publisher.Mono;
 @Slf4j
 public class TVTimeServiceImpl implements TVTimeService {
 
-  @Value("${selenium.driver_location}")
+  @Value("${selenium.driver_location:#{null}}")
   private String driverLocation;
 
-  @Value("${selenium.browser_location}")
+  @Value("${selenium.browser_location:#{null}}")
   private String browserLocation;
 
   private final Map<String, Triplet<String, String, JSONObject>> userAuth = new HashMap<>();
 
   @Override
   public void login(String user, String password) {
-    //System.setProperty("webdriver.chrome.driver", driverLocation);
+    if (driverLocation != null) {
+      System.setProperty("webdriver.chrome.driver", driverLocation);
+    }
     System.setProperty("webdriver.chrome.whitelistedIps", "");
     ChromeOptions options = new ChromeOptions();
-    options.addArguments("--headless","--no-sandbox","--disable-dev-shm-usage","--disable-setuid-sandbox");
-    //options.setBinary(browserLocation);
+    if (browserLocation != null) {
+      options.setBinary(browserLocation);
+    }
+    options.addArguments(
+        "--headless", "--no-sandbox", "--disable-dev-shm-usage", "--disable-setuid-sandbox");
     options.addArguments("--remote-allow-origins=*");
     WebDriver driver = new ChromeDriver(options);
     driver.get("https://app.tvtime.com/welcome?mode=auth");
     driver.manage().timeouts().implicitlyWait(Duration.ofMillis(5000));
-    try {
-      Thread.sleep(8000);
-    } catch (InterruptedException e) {
-      throw new RuntimeException(e);
+    String initialJwtToken = null;
+    for (int i = 1; i <= 3; i++) {
+      try {
+        Thread.sleep(5000 + (2000 * i));
+      } catch (InterruptedException e) {
+        throw new RuntimeException(e);
+      }
+      JavascriptExecutor js = (JavascriptExecutor) driver;
+      initialJwtToken =
+          (String)
+              js.executeScript(
+                  String.format("return window.localStorage.getItem('%s');", "flutter.jwtToken"));
+      if (StringUtils.hasText(initialJwtToken)) {
+        break;
+      }
+      log.warn(
+          "{}Unable to fetch JWT token, trying again...{}", ConsoleColor.YELLOW, ConsoleColor.NONE);
     }
-    JavascriptExecutor js = (JavascriptExecutor) driver;
-    String initialJwtToken =
-        (String)
-            js.executeScript(
-                String.format("return window.localStorage.getItem('%s');", "flutter.jwtToken"));
+    if (!StringUtils.hasText(initialJwtToken)) {
+      throw new TVTimeException("Unable to fetch JWT token using Selenium, application must exit.");
+    }
     driver.close();
     initialJwtToken = initialJwtToken.substring(1, initialJwtToken.length() - 1);
     WebClient client = getWebClient("https://beta-app.tvtime.com");
@@ -70,8 +88,8 @@ public class TVTimeServiceImpl implements TVTimeService {
     Mono<String> response = requestHeadersSpec.retrieve().bodyToMono(String.class);
     try {
       JSONObject responsePayload = new JSONObject(response.block());
-      Triplet jwtTriple =
-          new Triplet(
+      Triplet<String, String, JSONObject> jwtTriple =
+          new Triplet<>(
               responsePayload.getJSONObject("data").getString("jwt_token"),
               responsePayload.getJSONObject("data").getString("jwt_refresh_token"),
               credentials);
@@ -89,7 +107,7 @@ public class TVTimeServiceImpl implements TVTimeService {
   @Override
   public String watchEpisode(String user, String episodeId) throws TVTimeException {
     if (!isLoggedIn(user)) throw new TVTimeException("You are not logged in");
-    JSONObject responsePayload = null;
+    JSONObject responsePayload;
     WebClient client = getWebClient("https://app.tvtime.com");
     WebClient.UriSpec<WebClient.RequestBodySpec> uriSpec = client.post();
     WebClient.RequestBodySpec bodySpec =
@@ -109,10 +127,11 @@ public class TVTimeServiceImpl implements TVTimeService {
     Mono<String> response = requestHeadersSpec.retrieve().bodyToMono(String.class);
     try {
       responsePayload = new JSONObject(response.block());
+      return responsePayload.toString();
     } catch (JSONException e) {
       log.error(e.getMessage(), e);
     }
-    return responsePayload.toString();
+    return null;
   }
 
   private boolean isLoggedIn(String user) {
@@ -120,12 +139,10 @@ public class TVTimeServiceImpl implements TVTimeService {
   }
 
   private WebClient getWebClient(String baseUrl) {
-    WebClient client =
-        WebClient.builder()
-            .baseUrl(baseUrl)
-            .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-            .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(16 * 1024 * 1024))
-            .build();
-    return client;
+    return WebClient.builder()
+        .baseUrl(baseUrl)
+        .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+        .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(16 * 1024 * 1024))
+        .build();
   }
 }

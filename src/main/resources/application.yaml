@@ -10,7 +10,3 @@ logging:
   level:
     com:
       zggis: ${LOGGING_LEVEL:INFO}
-selenium:
-  driver_location: /home/default/chromedriver-linux64/chromedriver
-  #browser_location: /home/default/chrome-linux64/chrome
-  browser_location: ./chrome-headless-shell-linux64/chrome-headless-shell

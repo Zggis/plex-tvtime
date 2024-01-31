@@ -11,22 +11,21 @@ import jakarta.annotation.PostConstruct;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
-import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.reactive.function.client.WebClientRequestException;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 @Component
-@NoArgsConstructor
+@AllArgsConstructor
 @Slf4j
 public class ShowManagerServiceImpl implements ShowManagerService {
 
-  @Autowired private AccountConfig accountConfig;
+  private AccountConfig accountConfig;
 
-  @Autowired private TVTimeService tvTimeService;
+  private TVTimeService tvTimeService;
 
   private final Map<String, Set<String>> plexUsersMap = new HashMap<>();
 
@@ -251,7 +250,6 @@ public class ShowManagerServiceImpl implements ShowManagerService {
     for (int i = 1; i <= 5; i++) {
       try {
         tvTimeService.login(user, password);
-        // tvTimeService.fetchProfile(user);
         log.info(
             "{}{} has been successfully logged in!{}",
             ConsoleColor.GREEN.value,
@@ -261,9 +259,6 @@ public class ShowManagerServiceImpl implements ShowManagerService {
       } catch (TVTimeException e) {
         log.error(e.getMessage());
         System.exit(1);
-      } catch (WebClientResponseException e) {
-        log.error(e.getResponseBodyAsString());
-        log.error(e.getMessage(), e);
       } catch (Exception e) {
         log.warn(e.getMessage(), e);
         log.warn(
