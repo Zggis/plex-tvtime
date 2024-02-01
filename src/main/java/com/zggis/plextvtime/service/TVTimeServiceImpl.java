@@ -66,7 +66,7 @@ public class TVTimeServiceImpl implements TVTimeService {
         break;
       }
       log.warn(
-          "{}Unable to fetch JWT token, trying again...{}", ConsoleColor.YELLOW, ConsoleColor.NONE);
+          "{}Unable to fetch JWT token, trying again...{}", ConsoleColor.YELLOW.value, ConsoleColor.NONE.value);
     }
     if (!StringUtils.hasText(initialJwtToken)) {
       throw new TVTimeException("Unable to fetch JWT token using Selenium, application must exit.");
