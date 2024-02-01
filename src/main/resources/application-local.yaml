@@ -1,1 +1,8 @@
 # Config is being replaced by yaml in SPRING_CONFIG_LOCATION environment variable
+logging:
+  level:
+    com:
+      zggis: ${LOGGING_LEVEL:DEBUG}
+selenium:
+  driver_location: C:\projects\plex-tvtime\drivers\chromedriver.exe
+  browser_location: C:\projects\plex-tvtime\browsers\windows\chrome-win64\chrome.exe

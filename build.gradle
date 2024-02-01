@@ -5,7 +5,7 @@ plugins {
 }
 
 group = 'com.zggis'
-version = '1.1.1'
+version = '2.0.0'
 sourceCompatibility = '17'
 
 configurations {
@@ -23,6 +23,10 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
 	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
 	implementation 'org.jsoup:jsoup:1.16.1'
+	implementation 'org.seleniumhq.selenium:selenium-java:4.17.0'
+	implementation 'org.json:json:20231013'
+	implementation 'org.javatuples:javatuples:1.2'
+
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
