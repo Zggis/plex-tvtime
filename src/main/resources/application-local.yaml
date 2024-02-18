@@ -3,6 +3,8 @@ logging:
   level:
     com:
       zggis: ${LOGGING_LEVEL:DEBUG}
+logfile:
+  dir: C:\temp
 selenium:
   driver_location: C:\projects\plex-tvtime\drivers\chromedriver.exe
   browser_location: C:\projects\plex-tvtime\browsers\windows\chrome-win64\chrome.exe
