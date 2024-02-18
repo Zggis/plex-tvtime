@@ -49,7 +49,7 @@ LOGGING_LEVEL | INFO | Set to TRACE or DEBUG for additional logging.
 #### Optional Mappings
 Container Path | Description
 --- | ---
-/logs | You can map the /logs container directory to a host directory to expose the plex-tvtime.log file. If you wanted to setup notifications you can use this feature along with my other app <a href="https://github.com/Zggis/howler">Howler</a> to configure notification events.
+/logs | As of v2.0.1 You can map the /logs container directory to a host directory to expose the plex-tvtime.log file. If you wanted to setup notifications you can use this feature along with my other app <a href="https://github.com/Zggis/howler">Howler</a> to configure notification events.
 
 #### Linking Multiple TVTime Accounts (Only available in v1.1.0+)
 To link multiple TVTime accounts you can create a YAML configuration file following the template <a href="https://github.com/Zggis/plex-tvtime/blob/master/example-configs/application.yaml">here</a>. YAML files are very sensitive to format so make sure you use a text editor that can preserve tabs, spaces, and line endings.<br><br>
