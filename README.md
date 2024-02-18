@@ -46,6 +46,11 @@ PLEX_SHOWS_EXCLUDE | Undefined | A comma separated list of TV show titles that w
 PLEX_SHOWS_INCLUDE | Undefined | Overridden and ignored if PLEX_SHOWS_EXCLUDE is set, otherwise only shows that appear in this list will be sent to TVTime.
 LOGGING_LEVEL | INFO | Set to TRACE or DEBUG for additional logging.
 
+#### Optional Mappings
+Container Path | Description
+--- | ---
+/logs | You can map the /logs container directory to a host directory to expose the plex-tvtime.log file. If you wanted to setup notifications you can use this feature along with my other app <a href="https://github.com/Zggis/howler">Howler</a> to configure notification events.
+
 #### Linking Multiple TVTime Accounts (Only available in v1.1.0+)
 To link multiple TVTime accounts you can create a YAML configuration file following the template <a href="https://github.com/Zggis/plex-tvtime/blob/master/example-configs/application.yaml">here</a>. YAML files are very sensitive to format so make sure you use a text editor that can preserve tabs, spaces, and line endings.<br><br>
 You will need to mount the directory location of your YAML file to the docker container. In Unraid you can add a Path to the configuration, on docker command line you can follow the example below.<br><br>
