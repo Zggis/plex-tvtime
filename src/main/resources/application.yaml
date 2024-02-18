@@ -10,3 +10,10 @@ logging:
   level:
     com:
       zggis: ${LOGGING_LEVEL:INFO}
+  file:
+    name: ${logfile.dir}/plex-tvtime.log
+logfile:
+  dir: /logs
+
+
+

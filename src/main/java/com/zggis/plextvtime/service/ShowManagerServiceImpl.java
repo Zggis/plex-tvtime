@@ -257,8 +257,12 @@ public class ShowManagerServiceImpl implements ShowManagerService {
             ConsoleColor.NONE.value);
         return;
       } catch (TVTimeException e) {
+        log.error(
+            "{}TVTime login failed for user {}, please check credentials and restart the application.{}",
+            ConsoleColor.RED.value,
+            user,
+            ConsoleColor.NONE.value);
         log.error(e.getMessage());
-        System.exit(1);
       } catch (Exception e) {
         log.warn(e.getMessage(), e);
         log.warn(
