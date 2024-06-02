@@ -58,10 +58,8 @@ public class TVTimeServiceImpl implements TVTimeService {
         throw new RuntimeException(e);
       }
       JavascriptExecutor js = (JavascriptExecutor) driver;
-      initialJwtToken =
-          (String)
-              js.executeScript(
-                  String.format("return window.localStorage.getItem('%s');", "flutter.jwtToken"));
+      initialJwtToken = (String) js.executeScript(
+          String.format("return window.localStorage.getItem('%s');", "flutter.jwtToken"));
       if (StringUtils.hasText(initialJwtToken)) {
         break;
       }
@@ -88,11 +86,10 @@ public class TVTimeServiceImpl implements TVTimeService {
     Mono<String> response = requestHeadersSpec.retrieve().bodyToMono(String.class);
     try {
       JSONObject responsePayload = new JSONObject(response.block());
-      Triplet<String, String, JSONObject> jwtTriple =
-          new Triplet<>(
-              responsePayload.getJSONObject("data").getString("jwt_token"),
-              responsePayload.getJSONObject("data").getString("jwt_refresh_token"),
-              credentials);
+      Triplet<String, String, JSONObject> jwtTriple = new Triplet<>(
+          responsePayload.getJSONObject("data").getString("jwt_token"),
+          responsePayload.getJSONObject("data").getString("jwt_refresh_token"),
+          credentials);
       userAuth.put(user, jwtTriple);
       log.debug(
           "JWT tokens updated for user {} [jwt_token={} jwt_refresh_token={}]",
@@ -106,17 +103,16 @@ public class TVTimeServiceImpl implements TVTimeService {
 
   @Override
   public String watchEpisode(String user, String episodeId) throws TVTimeException {
-    if (!isLoggedIn(user)) throw new TVTimeException("You are not logged in");
+    if (!isLoggedIn(user))
+      throw new TVTimeException("You are not logged in");
     JSONObject responsePayload;
     WebClient client = getWebClient("https://app.tvtime.com");
     WebClient.UriSpec<WebClient.RequestBodySpec> uriSpec = client.post();
-    WebClient.RequestBodySpec bodySpec =
-        uriSpec.uri(
-            "/sidecar?o=https://api2.tozelabs.com/v2/watched_episodes/episode/"
-                + episodeId
-                + "&is_rewatch=0");
-    WebClient.RequestHeadersSpec<?> requestHeadersSpec =
-        bodySpec.bodyValue(userAuth.get(user).getValue2().toString());
+    WebClient.RequestBodySpec bodySpec = uriSpec.uri(
+        "/sidecar?o=https://api2.tozelabs.com/v2/watched_episodes/episode/"
+            + episodeId
+            + "&is_rewatch=0");
+    WebClient.RequestHeadersSpec<?> requestHeadersSpec = bodySpec.bodyValue(userAuth.get(user).getValue2().toString());
     requestHeadersSpec
         .header(HttpHeaders.AUTHORIZATION, "Bearer " + userAuth.get(user).getValue0())
         .header(

@@ -1,7 +1,6 @@
 account-config:
   accounts:
-    -
-      tvtimeUser: ${TVTIME_USER}
+    - tvtimeUser: ${TVTIME_USER}
       tvtimePassword: ${TVTIME_PASSWORD}
       plexUsers: ${PLEX_USERS}
       plexShowsExclude: ${PLEX_SHOWS_EXCLUDE:}
@@ -16,6 +15,3 @@ logfile:
   dir: /logs
 server:
   port: ${SERVER_PORT:8080}
-
-
-

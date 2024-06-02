@@ -10,8 +10,10 @@ public interface ShowManagerService {
   record Show(String name) {
     @Override
     public boolean equals(Object o) {
-      if (this == o) return true;
-      if (o == null || getClass() != o.getClass()) return false;
+      if (this == o)
+        return true;
+      if (o == null || getClass() != o.getClass())
+        return false;
       Show show = (Show) o;
       return name.equalsIgnoreCase(show.name);
     }
