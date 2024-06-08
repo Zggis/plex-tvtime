@@ -110,17 +110,13 @@ public class TVTimeServiceImpl implements TVTimeService {
     WebClient.UriSpec<WebClient.RequestBodySpec> uriSpec = client.post();
     WebClient.RequestBodySpec bodySpec;
     WebClient.RequestHeadersSpec<?> requestHeadersSpec;
-    String movieUUID = "null";
+    String movieUUID = null;
     if (mediaType.equals("movie")) {
       try {
         movieUUID = getMovieUUID(user, mediaId);
       } catch (JSONException e) {
         log.info("Movie not found in TVTime database");
       }
-      if (movieUUID.equals("")) {
-        log.warn("Movie not found in TVTime database");
-      }
-      log.debug("Movie UUID: {}", movieUUID);
       bodySpec = uriSpec.uri("/sidecar?o=https://msapi.tvtime.com/prod/v1/tracking/" + movieUUID + "/watch");
       // For movies, we must use a different endpoint and remove the jwt_refresh_token
       // from the body
@@ -144,7 +140,7 @@ public class TVTimeServiceImpl implements TVTimeService {
     } catch (JSONException e) {
       log.error(e.getMessage(), e);
     }
-    return "";
+    return null;
   }
 
   private boolean isLoggedIn(String user) {
