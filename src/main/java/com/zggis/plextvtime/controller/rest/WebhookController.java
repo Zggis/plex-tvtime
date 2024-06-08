@@ -3,7 +3,7 @@ package com.zggis.plextvtime.controller.rest;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zggis.plextvtime.dto.plex.PlexWebhook;
-import com.zggis.plextvtime.service.ShowManagerService;
+import com.zggis.plextvtime.service.MediaManagerService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 public class WebhookController {
 
     @Autowired
-    private ShowManagerService showManagerService;
+    private MediaManagerService mediaManagerService;
 
     @RequestMapping(value = "/plex", method = RequestMethod.POST)
     public ResponseEntity<String> handlePlexHook(@RequestParam String payload) {
@@ -31,7 +31,7 @@ public class WebhookController {
             throw new RuntimeException(e);
         }
         if (hook != null) {
-            showManagerService.markAsWatched(hook);
+            mediaManagerService.markAsWatched(hook);
             return ResponseEntity.ok("Message Received");
         }
         return ResponseEntity.badRequest().build();
