@@ -11,21 +11,24 @@ import jakarta.annotation.PostConstruct;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
-import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.reactive.function.client.WebClientRequestException;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 @Component
-@AllArgsConstructor
 @Slf4j
-public class ShowManagerServiceImpl implements ShowManagerService {
+public class MediaManagerServiceImpl implements MediaManagerService {
 
-  private AccountConfig accountConfig;
+  @Autowired private AccountConfig accountConfig;
 
-  private TVTimeService tvTimeService;
+  @Autowired private TVTimeService tvTimeService;
+
+  @Value("${track-movies:false}")
+  private boolean trackMovies;
 
   private final Map<String, Set<String>> plexUsersMap = new HashMap<>();
 
@@ -120,10 +123,15 @@ public class ShowManagerServiceImpl implements ShowManagerService {
   }
 
   private void processWebhook(PlexWebhook webhook) throws TVTimeException {
-    if (!webhook.metadata.librarySectionType.equals("show")) {
-      log.info(
-          "Ignoring webhook for library type '{}', only type 'show' will be processed",
-          webhook.metadata.librarySectionType);
+    String mediaType = webhook.metadata.librarySectionType;
+    if (mediaType == null
+        || mediaType.isEmpty()
+        || !mediaType.equals("show") && !mediaType.equals("movie")) {
+      log.warn(
+          "{}Ignoring webhook for library type '{}', only type show and movie will be processed{}",
+          ConsoleColor.YELLOW.value,
+          mediaType,
+          ConsoleColor.NONE.value);
       return;
     }
     if (!webhook.event.equals("media.scrobble")) {
@@ -132,25 +140,43 @@ public class ShowManagerServiceImpl implements ShowManagerService {
           webhook.event);
       return;
     }
-    String episodeId = null;
+    String mediaId = null;
+
     for (Guid guid : webhook.metadata.guid) {
       if (guid.id.contains("tvdb")) {
-        episodeId = guid.id.replace("tvdb://", "");
+        mediaId = guid.id.replace("tvdb://", "");
       }
     }
-    if (StringUtils.hasText(episodeId)) {
-      log.info(
-          "{}Processing webhook for {} S{}E{} - {}{}",
-          ConsoleColor.CYAN.value,
-          webhook.metadata.grandparentTitle,
-          webhook.metadata.parentIndex,
-          webhook.metadata.index,
-          webhook.metadata.title,
-          ConsoleColor.NONE.value);
+    if (StringUtils.hasText(mediaId)) {
+      if (mediaType.equals("show")) {
+        log.info(
+            "{}Processing webhook for {} S{}E{} - {}{}",
+            ConsoleColor.CYAN.value,
+            webhook.metadata.grandparentTitle,
+            webhook.metadata.parentIndex,
+            webhook.metadata.index,
+            webhook.metadata.title,
+            ConsoleColor.NONE.value);
+      } else if (trackMovies) {
+        log.info(
+            "{}Processing webhook for {} ({}){}",
+            ConsoleColor.CYAN.value,
+            webhook.metadata.title,
+            webhook.metadata.year,
+            ConsoleColor.NONE.value);
+      } else {
+        log.info(
+            "{}Ignoring webhook for movie {} ({}), to enable movie tracking set TRACK_MOVIES to true{}",
+            ConsoleColor.YELLOW.value,
+            webhook.metadata.title,
+            webhook.metadata.year,
+            ConsoleColor.NONE.value);
+        return;
+      }
       for (AccountLink account : accountConfig.getAccounts()) {
         log.debug("Checking TVTime account {}...", account.getTvtimeUser());
         if (hasPlexUser(account, webhook.account.title)) {
-          sendUserWatchRequest(account.getTvtimeUser(), episodeId, webhook);
+          sendUserWatchRequest(account.getTvtimeUser(), mediaId, mediaType, webhook);
         } else {
           log.info(
               "Ignoring webhook from plex user '{}', they are not linked to {}",
@@ -166,37 +192,54 @@ public class ShowManagerServiceImpl implements ShowManagerService {
     }
   }
 
-  private void sendUserWatchRequest(String tvtimeUser, String episodeId, PlexWebhook webhook) {
-    if (!excludedShowsMap.get(tvtimeUser).isEmpty()) {
-      if (excludedShowsMap.get(tvtimeUser).contains(new Show(webhook.metadata.grandparentTitle))) {
-        log.info(
-            "Ignoring webhook for show '{}', its in the excluded list for {}",
-            webhook.metadata.grandparentTitle,
-            tvtimeUser);
-        return;
-      }
-    } else if (!includedShowsMap.get(tvtimeUser).isEmpty()) {
-      if (!includedShowsMap.get(tvtimeUser).contains(new Show(webhook.metadata.grandparentTitle))) {
-        log.info(
-            "Ignoring webhook for show '{}', its not in the included list for {}",
-            webhook.metadata.grandparentTitle,
-            tvtimeUser);
-        return;
+  private void sendUserWatchRequest(
+      String tvtimeUser, String mediaId, String mediaType, PlexWebhook webhook) {
+    if (mediaType.equals("show")) {
+      if (!excludedShowsMap.get(tvtimeUser).isEmpty()) {
+        if (excludedShowsMap
+            .get(tvtimeUser)
+            .contains(new Show(webhook.metadata.grandparentTitle))) {
+          log.info(
+              "Ignoring webhook for show '{}', its in the excluded list for {}",
+              webhook.metadata.grandparentTitle,
+              tvtimeUser);
+          return;
+        }
+      } else if (!includedShowsMap.get(tvtimeUser).isEmpty()) {
+        if (!includedShowsMap
+            .get(tvtimeUser)
+            .contains(new Show(webhook.metadata.grandparentTitle))) {
+          log.info(
+              "Ignoring webhook for show '{}', its not in the included list for {}",
+              webhook.metadata.grandparentTitle,
+              tvtimeUser);
+          return;
+        }
       }
     }
     boolean success = false;
     for (int i = 1; i <= 5; i++) {
       try {
-        log.debug(tvTimeService.watchEpisode(tvtimeUser, episodeId));
-        log.info(
-            "{}{} S{}E{} - {}, was successfully marked as watched for {}!{}",
-            ConsoleColor.GREEN.value,
-            webhook.metadata.grandparentTitle,
-            webhook.metadata.parentIndex,
-            webhook.metadata.index,
-            webhook.metadata.title,
-            tvtimeUser,
-            ConsoleColor.NONE.value);
+        log.debug(tvTimeService.watchMedia(tvtimeUser, mediaId, mediaType));
+        if (mediaType.equals("show")) {
+          log.info(
+              "{}{} S{}E{} - {}, was successfully marked as watched for {}!{}",
+              ConsoleColor.GREEN.value,
+              webhook.metadata.grandparentTitle,
+              webhook.metadata.parentIndex,
+              webhook.metadata.index,
+              webhook.metadata.title,
+              tvtimeUser,
+              ConsoleColor.NONE.value);
+        } else {
+          log.info(
+              "{}{} ({}), was successfully marked as watched for {}!{}",
+              ConsoleColor.GREEN.value,
+              webhook.metadata.title,
+              webhook.metadata.year,
+              tvtimeUser,
+              ConsoleColor.NONE.value);
+        }
         success = true;
         break;
       } catch (WebClientResponseException e) {
@@ -234,14 +277,22 @@ public class ShowManagerServiceImpl implements ShowManagerService {
       }
     }
     if (!success) {
-      log.error(
-          "{}Failed to process webhook for for {} S{}E{} - {}{}",
-          ConsoleColor.RED.value,
-          webhook.metadata.grandparentTitle,
-          webhook.metadata.parentIndex,
-          webhook.metadata.index,
-          webhook.metadata.title,
-          ConsoleColor.NONE.value);
+      if (mediaType.equals("show")) {
+        log.error(
+            "{}Failed to process webhook for for {} S{}E{} - {}{}",
+            ConsoleColor.RED.value,
+            webhook.metadata.grandparentTitle,
+            webhook.metadata.parentIndex,
+            webhook.metadata.index,
+            webhook.metadata.title,
+            ConsoleColor.NONE.value);
+      } else {
+        log.error(
+            "{}Failed to process webhook for {}{}",
+            ConsoleColor.RED.value,
+            webhook.metadata.title,
+            ConsoleColor.NONE.value);
+      }
     }
   }
 

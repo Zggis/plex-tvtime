@@ -1,7 +1,5 @@
 package com.zggis.plextvtime;
 
-import com.zggis.plextvtime.service.TVTimeServiceImpl;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 

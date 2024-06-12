@@ -5,5 +5,5 @@ import com.zggis.plextvtime.exception.TVTimeException;
 public interface TVTimeService {
   void login(String user, String password);
 
-  String watchEpisode(String user, String episodeId) throws TVTimeException;
+  String watchMedia(String user, String mediaId, String mediaType) throws TVTimeException;
 }

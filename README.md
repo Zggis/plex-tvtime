@@ -42,6 +42,7 @@ PLEX_USERS | Single Plex user or comma separated list of users whoes watch event
 #### Optional Variables
 Container Variable | Default Value | Description
 --- | --- | ---
+TRACK_MOVIES | false | Set to true to track movies in TVTime.
 PLEX_SHOWS_EXCLUDE | Undefined | A comma separated list of TV show titles that will not be sent to TVTime. TVShow title should be identicle to how it appears in your Plex library. If the title includes a comma in it replace it with %2C to avoid conflicting with the comma delimeters in the list.
 PLEX_SHOWS_INCLUDE | Undefined | Overridden and ignored if PLEX_SHOWS_EXCLUDE is set, otherwise only shows that appear in this list will be sent to TVTime.
 LOGGING_LEVEL | INFO | Set to TRACE or DEBUG for additional logging.
@@ -71,4 +72,4 @@ If you get an error such as 'Unable to process webhook message: Cannot invoke "j
 ### FAQ
 **Question:** What about movies?
 
-**Answer:** I tried to get movies working as I know the TVTime mobile app supports tracking movies, however the website does not seem to support this. TVTime does not publish a public api so I had to rely on scraping the website which left me with no way to incorporate movies.
+**Answer:** Movie support is available as of v2.1.0. To enable movie tracking set TRACK_MOVIES environment variable to true.

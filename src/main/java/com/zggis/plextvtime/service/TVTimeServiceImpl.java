@@ -4,10 +4,10 @@ import com.zggis.plextvtime.exception.TVTimeException;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
-
 import com.zggis.plextvtime.util.ConsoleColor;
 import lombok.extern.slf4j.Slf4j;
 import org.javatuples.Triplet;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.openqa.selenium.JavascriptExecutor;
@@ -66,7 +66,9 @@ public class TVTimeServiceImpl implements TVTimeService {
         break;
       }
       log.warn(
-          "{}Unable to fetch JWT token, trying again...{}", ConsoleColor.YELLOW.value, ConsoleColor.NONE.value);
+          "{}Unable to fetch JWT token, trying again...{}",
+          ConsoleColor.YELLOW.value,
+          ConsoleColor.NONE.value);
     }
     if (!StringUtils.hasText(initialJwtToken)) {
       throw new TVTimeException("Unable to fetch JWT token using Selenium, application must exit.");
@@ -105,33 +107,52 @@ public class TVTimeServiceImpl implements TVTimeService {
   }
 
   @Override
-  public String watchEpisode(String user, String episodeId) throws TVTimeException {
+  public String watchMedia(String user, String mediaId, String mediaType) throws TVTimeException {
     if (!isLoggedIn(user)) throw new TVTimeException("You are not logged in");
     JSONObject responsePayload;
     WebClient client = getWebClient("https://app.tvtime.com");
     WebClient.UriSpec<WebClient.RequestBodySpec> uriSpec = client.post();
-    WebClient.RequestBodySpec bodySpec =
-        uriSpec.uri(
-            "/sidecar?o=https://api2.tozelabs.com/v2/watched_episodes/episode/"
-                + episodeId
-                + "&is_rewatch=0");
-    WebClient.RequestHeadersSpec<?> requestHeadersSpec =
-        bodySpec.bodyValue(userAuth.get(user).getValue2().toString());
-    requestHeadersSpec
-        .header(HttpHeaders.AUTHORIZATION, "Bearer " + userAuth.get(user).getValue0())
-        .header(
-            HttpHeaders.CONTENT_LENGTH,
-            String.valueOf(userAuth.get(user).getValue2().toString().getBytes().length))
-        .header(HttpHeaders.HOST, "app.tvtime.com:80")
-        .retrieve();
+    WebClient.RequestBodySpec bodySpec;
+    WebClient.RequestHeadersSpec<?> requestHeadersSpec;
+    String movieUUID;
+    if (mediaType.equals("show")) {
+      bodySpec =
+          uriSpec.uri(
+              "/sidecar?o=https://api2.tozelabs.com/v2/watched_episodes/episode/"
+                  + mediaId
+                  + "&is_rewatch=0");
+      requestHeadersSpec = bodySpec.bodyValue(userAuth.get(user).getValue2().toString());
+      requestHeadersSpec
+          .header(HttpHeaders.AUTHORIZATION, "Bearer " + userAuth.get(user).getValue0())
+          .header(
+              HttpHeaders.CONTENT_LENGTH,
+              String.valueOf(userAuth.get(user).getValue2().toString().getBytes().length))
+          .header(HttpHeaders.HOST, "app.tvtime.com:80");
+    } else {
+      try {
+        movieUUID = getMovieUUID(user, mediaId);
+      } catch (JSONException e) {
+        log.info("Movie not found in TVTime database");
+        return null;
+      }
+      bodySpec =
+          uriSpec.uri(
+              "/sidecar?o=https://msapi.tvtime.com/prod/v1/tracking/" + movieUUID + "/watch");
+      // For movies, we must use a different endpoint and remove the jwt_refresh_token
+      // from the body
+      requestHeadersSpec =
+          bodySpec
+              .header(HttpHeaders.AUTHORIZATION, "Bearer " + userAuth.get(user).getValue0())
+              .header(HttpHeaders.HOST, "app.tvtime.com:80");
+    }
     Mono<String> response = requestHeadersSpec.retrieve().bodyToMono(String.class);
     try {
       responsePayload = new JSONObject(response.block());
-      return responsePayload.toString();
     } catch (JSONException e) {
       log.error(e.getMessage(), e);
+      return null;
     }
-    return null;
+    return responsePayload.toString();
   }
 
   private boolean isLoggedIn(String user) {
@@ -144,5 +165,38 @@ public class TVTimeServiceImpl implements TVTimeService {
         .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
         .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(16 * 1024 * 1024))
         .build();
+  }
+
+  private String getMovieUUID(String user, String movieId) {
+    JSONObject responsePayload;
+    WebClient client = getWebClient("https://app.tvtime.com");
+    Mono<String> response =
+        client
+            .get()
+            .uri(
+                "/sidecar?o=https://search.tvtime.com/v1/search/series,movie&q="
+                    + movieId
+                    + "&offset=0&limit=1")
+            .header(HttpHeaders.AUTHORIZATION, "Bearer " + userAuth.get(user).getValue0())
+            .header(HttpHeaders.HOST, "app.tvtime.com:80")
+            .retrieve()
+            .bodyToMono(String.class);
+
+    try {
+      responsePayload = new JSONObject(response.block());
+      if (responsePayload.getString("status").equals("success")) {
+        JSONArray dataArray = responsePayload.getJSONArray("data");
+        for (int i = 0; i < dataArray.length(); i++) {
+          JSONObject movie = dataArray.getJSONObject(i);
+          int movieIdInt = Integer.parseInt(movieId);
+          if (movie.getInt("id") == movieIdInt) {
+            return movie.getString("uuid");
+          }
+        }
+      }
+    } catch (JSONException e) {
+      log.error(e.getMessage(), e);
+    }
+    return null;
   }
 }
