@@ -22,6 +22,7 @@ public class Metadata {
     public String grandparentGuid;
     public String type;
     public String title;
+    public String year;
     public String grandparentKey;
     public String parentKey;
     public String librarySectionTitle;
