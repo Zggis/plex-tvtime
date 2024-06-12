@@ -17,6 +17,3 @@ logfile:
 track-movies: ${TRACK_MOVIES:false}
 server:
   port: ${SERVER_PORT:8080}
-
-
-
