@@ -1,11 +1,11 @@
 plugins {
 	id 'java'
-	id 'org.springframework.boot' version '3.3.0'
-	id 'io.spring.dependency-management' version '1.1.5'
+	id 'org.springframework.boot' version '3.3.4'
+	id 'io.spring.dependency-management' version '1.1.6'
 }
 
 group = 'com.zggis'
-version = '2.1.0'
+version = '2.1.1'
 sourceCompatibility = '17'
 
 configurations {
@@ -22,8 +22,11 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
 	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
-	implementation 'org.jsoup:jsoup:1.17.2'
-	implementation 'org.seleniumhq.selenium:selenium-java:4.21.0'
+	implementation 'org.jsoup:jsoup:1.18.1'
+	implementation 'org.seleniumhq.selenium:selenium-java:4.25.0'
+	//This dependency might need to be updated as the Selenium docker image is updated. v124 in artifact name must match CDP version
+	implementation 'org.seleniumhq.selenium:selenium-devtools-v124:4.22.0'
+
 	implementation 'org.json:json:20240303'
 	implementation 'org.javatuples:javatuples:1.2'
 

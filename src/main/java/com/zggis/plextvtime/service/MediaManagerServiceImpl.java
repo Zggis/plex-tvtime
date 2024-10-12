@@ -220,7 +220,7 @@ public class MediaManagerServiceImpl implements MediaManagerService {
     boolean success = false;
     for (int i = 1; i <= 5; i++) {
       try {
-        log.debug(tvTimeService.watchMedia(tvtimeUser, mediaId, mediaType));
+        log.trace(tvTimeService.watchMedia(tvtimeUser, mediaId, mediaType));
         if (mediaType.equals("show")) {
           log.info(
               "{}{} S{}E{} - {}, was successfully marked as watched for {}!{}",
