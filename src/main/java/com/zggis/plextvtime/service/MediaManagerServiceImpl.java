@@ -135,7 +135,7 @@ public class MediaManagerServiceImpl implements MediaManagerService {
       return;
     }
     if (!webhook.event.equals("media.scrobble")) {
-      log.info(
+      log.debug(
           "Ignoring webhook for event type '{}', only type media.scrobble will be processed",
           webhook.event);
       return;
