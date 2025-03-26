@@ -1,4 +1,4 @@
-FROM zenika/alpine-chrome:with-chromedriver
+FROM zenika/alpine-chrome:with-selenoid
 EXPOSE 8080
 USER root
 RUN apk add dpkg
