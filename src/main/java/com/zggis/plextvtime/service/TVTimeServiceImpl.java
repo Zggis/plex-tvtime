@@ -55,6 +55,7 @@ public class TVTimeServiceImpl implements TVTimeService {
       try {
         Thread.sleep(5000 + (2000 * i));
       } catch (InterruptedException e) {
+        driver.close();
         throw new RuntimeException(e);
       }
       JavascriptExecutor js = (JavascriptExecutor) driver;
