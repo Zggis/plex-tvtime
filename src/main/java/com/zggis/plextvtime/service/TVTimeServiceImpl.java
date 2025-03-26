@@ -96,11 +96,7 @@ public class TVTimeServiceImpl implements TVTimeService {
               responsePayload.getJSONObject("data").getString("jwt_refresh_token"),
               credentials);
       userAuth.put(user, jwtTriple);
-      log.debug(
-          "JWT tokens updated for user {} [jwt_token={} jwt_refresh_token={}]",
-          user,
-          jwtTriple.getValue0(),
-          jwtTriple.getValue1());
+      log.debug("JWT tokens updated for user {}", user);
     } catch (JSONException e) {
       log.error(e.getMessage(), e);
     }
