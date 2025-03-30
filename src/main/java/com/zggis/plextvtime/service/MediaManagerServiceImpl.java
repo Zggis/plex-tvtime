@@ -128,10 +128,8 @@ public class MediaManagerServiceImpl implements MediaManagerService {
         || mediaType.isEmpty()
         || !mediaType.equals("show") && !mediaType.equals("movie")) {
       log.warn(
-          "{}Ignoring webhook for library type '{}', only type show and movie will be processed{}",
-          ConsoleColor.YELLOW.value,
-          mediaType,
-          ConsoleColor.NONE.value);
+          "Ignoring webhook for library type '{}', only type show and movie will be processed",
+          mediaType);
       return;
     }
     if (!webhook.event.equals("media.scrobble")) {
@@ -166,11 +164,9 @@ public class MediaManagerServiceImpl implements MediaManagerService {
             ConsoleColor.NONE.value);
       } else {
         log.info(
-            "{}Ignoring webhook for movie {} ({}), to enable movie tracking set TRACK_MOVIES to true{}",
-            ConsoleColor.YELLOW.value,
+            "Ignoring webhook for movie {} ({}), to enable movie tracking set TRACK_MOVIES to true",
             webhook.metadata.title,
-            webhook.metadata.year,
-            ConsoleColor.NONE.value);
+            webhook.metadata.year);
         return;
       }
       for (AccountLink account : accountConfig.getAccounts()) {

@@ -55,6 +55,7 @@ public class TVTimeServiceImpl implements TVTimeService {
       try {
         Thread.sleep(5000 + (2000 * i));
       } catch (InterruptedException e) {
+        driver.close();
         throw new RuntimeException(e);
       }
       JavascriptExecutor js = (JavascriptExecutor) driver;
@@ -70,10 +71,10 @@ public class TVTimeServiceImpl implements TVTimeService {
           ConsoleColor.YELLOW.value,
           ConsoleColor.NONE.value);
     }
+    driver.close();
     if (!StringUtils.hasText(initialJwtToken)) {
       throw new TVTimeException("Unable to fetch JWT token using Selenium, application must exit.");
     }
-    driver.close();
     initialJwtToken = initialJwtToken.substring(1, initialJwtToken.length() - 1);
     WebClient client = getWebClient("https://beta-app.tvtime.com");
     WebClient.UriSpec<WebClient.RequestBodySpec> uriSpec = client.post();
@@ -96,11 +97,7 @@ public class TVTimeServiceImpl implements TVTimeService {
               responsePayload.getJSONObject("data").getString("jwt_refresh_token"),
               credentials);
       userAuth.put(user, jwtTriple);
-      log.debug(
-          "JWT tokens updated for user {} [jwt_token={} jwt_refresh_token={}]",
-          user,
-          jwtTriple.getValue0(),
-          jwtTriple.getValue1());
+      log.debug("JWT tokens updated for user {}", user);
     } catch (JSONException e) {
       log.error(e.getMessage(), e);
     }
