@@ -41,7 +41,7 @@ jobs:
           tags: zggis/plex-tvtime:${{ inputs.name }}
           
       - name: Publish JAR
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Plex-TVTime JAR
           path: build/libs/plex-tvtime*.jar
