@@ -310,6 +310,7 @@ public class MediaManagerServiceImpl implements MediaManagerService {
             user,
             ConsoleColor.NONE.value);
         log.error(e.getMessage());
+        System.exit(1);
       } catch (Exception e) {
         log.warn(e.getMessage(), e);
         log.warn(

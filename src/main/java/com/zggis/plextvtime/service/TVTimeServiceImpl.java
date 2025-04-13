@@ -26,11 +26,16 @@ import reactor.core.publisher.Mono;
 @Slf4j
 public class TVTimeServiceImpl implements TVTimeService {
 
+  public static final String TV_TIME_HOST = "https://app.tvtime.com";
+
   @Value("${selenium.driver_location:#{null}}")
   private String driverLocation;
 
   @Value("${selenium.browser_location:#{null}}")
   private String browserLocation;
+
+  @Value("${mark-previous-episodes}")
+  private boolean markPreviousEpisodes;
 
   private final Map<String, Triplet<String, String, JSONObject>> userAuth = new HashMap<>();
 
@@ -107,7 +112,7 @@ public class TVTimeServiceImpl implements TVTimeService {
   public String watchMedia(String user, String mediaId, String mediaType) throws TVTimeException {
     if (!isLoggedIn(user)) throw new TVTimeException("You are not logged in");
     JSONObject responsePayload;
-    WebClient client = getWebClient("https://app.tvtime.com");
+    WebClient client = getWebClient(TV_TIME_HOST);
     WebClient.UriSpec<WebClient.RequestBodySpec> uriSpec = client.post();
     WebClient.RequestBodySpec bodySpec;
     WebClient.RequestHeadersSpec<?> requestHeadersSpec;
@@ -149,7 +154,43 @@ public class TVTimeServiceImpl implements TVTimeService {
       log.error(e.getMessage(), e);
       return null;
     }
+    if (markPreviousEpisodes) {
+      log.debug("Marking previous episodes as watched.");
+      try {
+        int tvTimeShowId = responsePayload.getJSONObject("show").getInt("id");
+        markPreviousEpisodesAsWatched(user, mediaId, tvTimeShowId);
+      } catch (JSONException e) {
+        log.warn(
+            "{}Unable to mark previous episodes as watched, TVTime show id not found in response payload.{}",
+            ConsoleColor.YELLOW,
+            ConsoleColor.NONE);
+        log.warn(e.getMessage(), e);
+      }
+    }
     return responsePayload.toString();
+  }
+
+  private void markPreviousEpisodesAsWatched(String user, String mediaId, int tvTimeShowId) {
+    WebClient client = getWebClient(TV_TIME_HOST);
+    WebClient.RequestBodySpec bodySpec;
+    WebClient.RequestHeadersSpec<?> requestHeadersSpec;
+    WebClient.UriSpec<WebClient.RequestBodySpec> uriSpec = client.post();
+    Mono<String> response;
+    bodySpec =
+        uriSpec.uri(
+            "/sidecar?o=https://api2.tozelabs.com/v2/watched_episodes/show/"
+                + tvTimeShowId
+                + "/until/episode/"
+                + mediaId);
+    requestHeadersSpec = bodySpec.bodyValue(userAuth.get(user).getValue2().toString());
+    requestHeadersSpec
+        .header(HttpHeaders.AUTHORIZATION, "Bearer " + userAuth.get(user).getValue0())
+        .header(
+            HttpHeaders.CONTENT_LENGTH,
+            String.valueOf(userAuth.get(user).getValue2().toString().getBytes().length))
+        .header(HttpHeaders.HOST, "app.tvtime.com:80");
+    response = requestHeadersSpec.retrieve().bodyToMono(String.class);
+    response.block();
   }
 
   private boolean isLoggedIn(String user) {
