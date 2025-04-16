@@ -5,7 +5,7 @@ plugins {
 }
 
 group = 'com.zggis'
-version = '2.3.0'
+version = '2.3.1'
 
 configurations {
 	compileOnly {
