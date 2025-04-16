@@ -19,7 +19,9 @@ account-config:
       tvtimePassword: tvtimePassword3
       plexUsers: plexUser2,plexUser3
       plexShowsInclude: Game of Thrones,Breaking Bad
-
+      
+track-movies: ${TRACK_MOVIES:false}
+mark-previous-episodes: ${MARK_PREVIOUS_EPISODES:false}
 logging:
   level:
     com:
