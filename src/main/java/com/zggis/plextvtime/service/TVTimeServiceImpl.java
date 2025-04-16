@@ -34,7 +34,7 @@ public class TVTimeServiceImpl implements TVTimeService {
   @Value("${selenium.browser_location:#{null}}")
   private String browserLocation;
 
-  @Value("${mark-previous-episodes}")
+  @Value("${mark-previous-episodes:false}")
   private boolean markPreviousEpisodes;
 
   private final Map<String, Triplet<String, String, JSONObject>> userAuth = new HashMap<>();
