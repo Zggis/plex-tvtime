@@ -51,6 +51,7 @@ Add the following Template.
         "index": {{EpisodeNumber}},
         "parentIndex": {{SeasonNumber}},
         {{/if_equals}}
+        "year": {{Year}},
         "Guid":
         [
             {
