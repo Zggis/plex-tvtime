@@ -23,7 +23,7 @@ public class WebhookController {
 
   @RequestMapping(value = "/plex", method = RequestMethod.POST)
   public ResponseEntity<String> handlePlexHook(
-      @RequestParam(required = false) String payload, @RequestBody String body) {
+      @RequestParam(required = false) String payload, @RequestBody(required = false) String body) {
     if (!StringUtils.hasText(payload)) {
       payload = body;
     }
