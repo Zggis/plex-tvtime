@@ -69,3 +69,6 @@ Save the changes.
 ### Usage
 When watching a TV episode if the playback is stopped near the end of the episode it should mark the episode as watched in TVTime. Unlike Plex, the percentage the episode needs to be played to consider it watched is not configurable, and I am not sure what Jellyfin sets this too. The best way to test this is to play an episode and skip forward all the way to the end and let the duration time run down to 0 and automatically close the player.<br>
 If using the advanced Plex-TVTime configuration with multiple users, you can set your Jellyfin users in the 'plexUsers' field.
+
+### Support
+Jellyfin integration may have some issues, Plex-TVTime is tested primarily with Plex. When opening an issue be sure to set LOGGING_LEVEL environment variable to TRACE to capture the full webhook payload in the logs and include them in the issue.
