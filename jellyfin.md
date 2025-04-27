@@ -15,7 +15,11 @@ Give the Webhook a name.
 
 Set Webhook URL to http://{HOST}:{PORT}/webhook/plex (You can confirm this URL by opening the Plex-TVTime WebUI)
 
+Make sure 'Status' is set to Enable
+
 Set Notification Type to 'Playback Stop'
+
+Set 'User Filter' if desired.
 
 Set Item Type to 'Episodes' (Movie support is not available yet due to limitations with the Jellyfin Webhook plugin, see https://github.com/jellyfin/jellyfin-plugin-webhook/issues/323)
 
