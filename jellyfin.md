@@ -5,6 +5,8 @@ Install Plex-TVTime using the steps found in the project's [README](https://gith
 Install the Webhook Plugin for Jellyfin: https://github.com/jellyfin/jellyfin-plugin-webhook/tree/master through the Jellyfin server dashboard.
 
 ### Configuration
+Open the Jellyfin Webhook settings.
+
 Server URL at the top can be left blank, unless you need it for a different Webhook.
 
 Create a new webhook 'Add Generic Destination'
