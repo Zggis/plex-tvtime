@@ -21,7 +21,7 @@ Set Notification Type to 'Playback Stop'
 
 Set 'User Filter' if desired.
 
-Set Item Type to 'Episodes' (Movie support is not available yet due to limitations with the Jellyfin Webhook plugin, see https://github.com/jellyfin/jellyfin-plugin-webhook/issues/323)
+Set Item Type to 'Episodes' (Movie support should also work if the TVDB metadata is set correctly in the title)
 
 Add the following Template.
 ```agsl
