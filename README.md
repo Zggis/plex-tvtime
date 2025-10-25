@@ -26,7 +26,7 @@ $ docker compose up
 Navigating to the home page http://[host]:[port] in your browser will display the webhook URL you can enter in Plex > Settings > Webhooks. It should be http://[host]:[port]/webhook/plex You may need to restart your Plex media server for these changes to take effect.<br><br>
 Plex-TVTime will mark episodes as watched on your TVTime profile once you have watched them passed the configured 'Video played threshold' in Plex (You can adjust this % in Plex Settings > Library). Plex <strong>does not</strong> send webhooks when episodes are manaully marked as watched.<br><br>
 Watching an episode for a show that has not been added to you TVTime profile will automatically add the show. If this behavior is undesired, you can make use of the Excluded/Included configuration parameters below to restrict which shows are sent to TVTime.<br><br>
-Watching an episode for a show you have already marked as watched in TVTime has no effect, the episode is not marked as 'rewatched' in TVTime, nor is the time you first marked the episode as watched updated.<br><br>
+Watching an episode for a show you have already marked as watched in TVTime has no effect, the episode is not marked as 'rewatched' in TVTime(unless MARK_REWATCH_EPISODES is enabled), nor is the time you first marked the episode as watched updated.<br><br>
 As of v1.1.0 Plex-TVTime supports linking multiple TVTime accounts through advanced configuration. <a href="https://github.com/Zggis/plex-tvtime#linking-multiple-tvtime-accounts-only-available-in-v110">See details below.</a>
 
 ### Basic Configuration
@@ -43,6 +43,7 @@ Container Variable | Default Value | Description
 --- | --- | ---
 TRACK_MOVIES | false | Set to true to track movies in TVTime.
 MARK_PREVIOUS_EPISODES | false | Set to true to mark all previous episodes of a TV show as watched when you watch a episode.
+MARK_REWATCH_EPISODES | false | Set to true to automatically mark an episode as rewatched and increase the counter in TVTime.
 PLEX_SHOWS_EXCLUDE | Undefined | A comma separated list of TV show titles that will not be sent to TVTime. TVShow title should be identicle to how it appears in your Plex library. If the title includes a comma in it replace it with %2C to avoid conflicting with the comma delimeters in the list.
 PLEX_SHOWS_INCLUDE | Undefined | Overridden and ignored if PLEX_SHOWS_EXCLUDE is set, otherwise only shows that appear in this list will be sent to TVTime.
 LOGGING_LEVEL | INFO | Set to TRACE or DEBUG for additional logging.

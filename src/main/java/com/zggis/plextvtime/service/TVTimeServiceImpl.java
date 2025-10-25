@@ -37,6 +37,9 @@ public class TVTimeServiceImpl implements TVTimeService {
   @Value("${mark-previous-episodes:false}")
   private boolean markPreviousEpisodes;
 
+  @Value("${mark-rewatch-episodes:false}")
+  private boolean markReWatchEpisodes;
+
   private final Map<String, Triplet<String, String, JSONObject>> userAuth = new HashMap<>();
 
   @Override
@@ -121,8 +124,9 @@ public class TVTimeServiceImpl implements TVTimeService {
       bodySpec =
           uriSpec.uri(
               "/sidecar?o=https://api2.tozelabs.com/v2/watched_episodes/episode/"
-                  + mediaId
-                  + "&is_rewatch=0");
+                      + mediaId
+                      + "&is_rewatch="
+                      + (markReWatchEpisodes ? "1" : "0"));
       requestHeadersSpec = bodySpec.bodyValue(userAuth.get(user).getValue2().toString());
       requestHeadersSpec
           .header(HttpHeaders.AUTHORIZATION, "Bearer " + userAuth.get(user).getValue0())
