@@ -43,7 +43,7 @@ Container Variable | Default Value | Description
 --- |---------------| ---
 TRACK_MOVIES | false         | Set to true to track movies in TVTime.
 MARK_PREVIOUS_EPISODES | false         | Set to true to mark all previous episodes of a TV show as watched when you watch a episode.
-MARK_REWATCH_EPISODES | false         | Set to true to automatically mark a previously watched episode as rewatched and increase the counter in TVTime.
+MARK_REWATCH_EPISODES | false         | Set to true to automatically mark a previously watched episode as rewatched and increment the counter in TVTime.
 PLEX_SHOWS_EXCLUDE | Undefined     | A comma separated list of TV show titles that will not be sent to TVTime. TVShow title should be identicle to how it appears in your Plex library. If the title includes a comma in it replace it with %2C to avoid conflicting with the comma delimeters in the list.
 PLEX_SHOWS_INCLUDE | Undefined     | Overridden and ignored if PLEX_SHOWS_EXCLUDE is set, otherwise only shows that appear in this list will be sent to TVTime.
 LOGGING_LEVEL | INFO          | Set to TRACE or DEBUG for additional logging.
