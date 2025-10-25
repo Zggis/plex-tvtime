@@ -22,6 +22,7 @@ account-config:
       
 track-movies: ${TRACK_MOVIES:false}
 mark-previous-episodes: ${MARK_PREVIOUS_EPISODES:false}
+mark-rewatch-episodes: ${MARK_REWATCH_EPISODES:false}
 logging:
   level:
     com:

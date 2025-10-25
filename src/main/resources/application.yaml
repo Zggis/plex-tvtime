@@ -16,5 +16,6 @@ logfile:
   dir: /logs
 track-movies: ${TRACK_MOVIES:false}
 mark-previous-episodes: ${MARK_PREVIOUS_EPISODES:false}
+mark-rewatch-episodes: ${MARK_REWATCH_EPISODES:false}
 server:
   port: ${SERVER_PORT:8080}

@@ -26,7 +26,7 @@ $ docker compose up
 Navigating to the home page http://[host]:[port] in your browser will display the webhook URL you can enter in Plex > Settings > Webhooks. It should be http://[host]:[port]/webhook/plex You may need to restart your Plex media server for these changes to take effect.<br><br>
 Plex-TVTime will mark episodes as watched on your TVTime profile once you have watched them passed the configured 'Video played threshold' in Plex (You can adjust this % in Plex Settings > Library). Plex <strong>does not</strong> send webhooks when episodes are manaully marked as watched.<br><br>
 Watching an episode for a show that has not been added to you TVTime profile will automatically add the show. If this behavior is undesired, you can make use of the Excluded/Included configuration parameters below to restrict which shows are sent to TVTime.<br><br>
-Watching an episode for a show you have already marked as watched in TVTime has no effect, the episode is not marked as 'rewatched' in TVTime, nor is the time you first marked the episode as watched updated.<br><br>
+By default watching an episode of a show you have already marked as watched in TVTime has no effect, the episode is not marked as 'rewatched' in TVTime, nor is the time you first marked the episode as watched updated. <strong>If the episode has a rewatch counter in TVTime it will be reset to 0.</strong> If you set MARK_REWATCH_EPISODES to true, previously watched episodes will be marked as rewatched and increment the counter in TVTime, the watch time displayed in TVTime will be the date you first watched the episode.<br><br>
 As of v1.1.0 Plex-TVTime supports linking multiple TVTime accounts through advanced configuration. <a href="https://github.com/Zggis/plex-tvtime#linking-multiple-tvtime-accounts-only-available-in-v110">See details below.</a>
 
 ### Basic Configuration
@@ -40,13 +40,14 @@ PLEX_USERS | Single Plex user or comma separated list of users whoes watch event
 
 #### Optional Variables
 Container Variable | Default Value | Description
---- | --- | ---
-TRACK_MOVIES | false | Set to true to track movies in TVTime.
-MARK_PREVIOUS_EPISODES | false | Set to true to mark all previous episodes of a TV show as watched when you watch a episode.
-PLEX_SHOWS_EXCLUDE | Undefined | A comma separated list of TV show titles that will not be sent to TVTime. TVShow title should be identicle to how it appears in your Plex library. If the title includes a comma in it replace it with %2C to avoid conflicting with the comma delimeters in the list.
-PLEX_SHOWS_INCLUDE | Undefined | Overridden and ignored if PLEX_SHOWS_EXCLUDE is set, otherwise only shows that appear in this list will be sent to TVTime.
-LOGGING_LEVEL | INFO | Set to TRACE or DEBUG for additional logging.
-SERVER_PORT | 8080 | Set to change the port the application will use within the docker container.
+--- |---------------| ---
+TRACK_MOVIES | false         | Set to true to track movies in TVTime.
+MARK_PREVIOUS_EPISODES | false         | Set to true to mark all previous episodes of a TV show as watched when you watch a episode.
+MARK_REWATCH_EPISODES | false         | Set to true to automatically mark a previously watched episode as rewatched and increment the counter in TVTime.
+PLEX_SHOWS_EXCLUDE | Undefined     | A comma separated list of TV show titles that will not be sent to TVTime. TVShow title should be identicle to how it appears in your Plex library. If the title includes a comma in it replace it with %2C to avoid conflicting with the comma delimeters in the list.
+PLEX_SHOWS_INCLUDE | Undefined     | Overridden and ignored if PLEX_SHOWS_EXCLUDE is set, otherwise only shows that appear in this list will be sent to TVTime.
+LOGGING_LEVEL | INFO          | Set to TRACE or DEBUG for additional logging.
+SERVER_PORT | 8080          | Set to change the port the application will use within the docker container.
 
 #### Optional Mappings
 Container Path | Description
