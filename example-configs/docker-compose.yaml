@@ -10,6 +10,7 @@ services:
       - PLEX_USERS=${PLEX_USERS}
       - TRACK_MOVIES=${TRACK_MOVIES:-false}
       - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL:-}
+      - DISCORD_HOST_URL=${DISCORD_HOST_URL:-}
       - DISCORD_NOTIFY_ON_STARTUP=${DISCORD_NOTIFY_ON_STARTUP:-true}
     volumes:
       - ./logs:/logs
