@@ -17,7 +17,25 @@ You can run Plex-TVTime on Docker locally by using the following command. Replac
 $ docker run -e TVTIME_USER={Your TVTime username} -e TVTIME_PASSWORD={Your TVTime password} -e PLEX_USERS={Plex username(s) to link} -p 8080:8080 zggis/plex-tvtime:latest
 ```
 #### Docker Compose
-Example compose and env files can be found <a href="https://github.com/Zggis/plex-tvtime/tree/master/example-configs">here.</a>
+Example compose file can be found <a href="https://github.com/Zggis/plex-tvtime/tree/master/example-configs">here.</a>
+```yaml
+version: '3.9'
+services:
+  plex-tvtime:
+    image: zggis/plex-tvtime:latest
+    ports:
+      - '8080:8080'
+    environment:
+      - TVTIME_USER=your_tvtime_username
+      - TVTIME_PASSWORD=your_tvtime_password
+      - PLEX_USERS=plex_user1,plex_user2
+      - TRACK_MOVIES=true
+      - DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/your_webhook_url
+    volumes:
+      - ./logs:/logs
+      - ./config:/config
+    restart: unless-stopped
+```
 ```
 $ docker compose up
 ```
@@ -48,6 +66,9 @@ PLEX_SHOWS_EXCLUDE | Undefined     | A comma separated list of TV show titles th
 PLEX_SHOWS_INCLUDE | Undefined     | Overridden and ignored if PLEX_SHOWS_EXCLUDE is set, otherwise only shows that appear in this list will be sent to TVTime.
 LOGGING_LEVEL | INFO          | Set to TRACE or DEBUG for additional logging.
 SERVER_PORT | 8080          | Set to change the port the application will use within the docker container.
+DISCORD_WEBHOOK_URL | Undefined     | Discord webhook URL for notifications. Create one in Discord Server Settings > Integrations > Webhooks.
+DISCORD_HOST_URL | Undefined     | Your server's URL (e.g., http://192.168.1.100:8080) to display in Discord notifications.
+DISCORD_NOTIFY_ON_STARTUP | true          | Set to false to disable the startup notification to Discord.
 
 #### Optional Mappings
 Container Path | Description
@@ -68,6 +89,24 @@ If you are using the docker compose file, you will need to specify SPRING_CONFIG
 
 ### Jellyfin Support
 As of v2.4.0 Plex-TVTime supports Jellyfin integration for TV Shows. [See this page to configure it](https://github.com/Zggis/plex-tvtime/blob/master/jellyfin.md).
+
+### Discord Notifications
+As of v2.6.0 Plex-TVTime supports Discord notifications to keep you informed about the application status.
+
+#### Features
+- **Startup Notification**: Get notified when the application starts with the webhook URL ready to configure
+- **Login Notification**: Get notified when a TVTime user successfully logs in
+
+#### Setup
+1. Go to your Discord server → **Server Settings** → **Integrations** → **Webhooks**
+2. Click **New Webhook**, choose a channel, and copy the webhook URL
+3. Add the `DISCORD_WEBHOOK_URL` environment variable to your container
+
+#### Example Notification
+When the application starts, you'll receive a message like:
+> ✅ **Plex-TVTime** is now up and running!
+> 📡 Webhook endpoint ready at port `8080`
+> 🔗 Configure Plex webhook to: `http://192.168.1.100:8080/webhook/plex`
 
 ### Troubleshooting
 Please check the logs, as described above many webhook events are intentionally ignored depending on configuration. If you can't resolve on your own open an <a href="https://github.com/Zggis/plex-tvtime/issues/new">issue</a> and I will help. If you open an issue please set the LOGGING_LEVEL to TRACE and include the relevant logs in your issue, the app does not create its own logfile, so you can just copy them from the console logs.<br><br>

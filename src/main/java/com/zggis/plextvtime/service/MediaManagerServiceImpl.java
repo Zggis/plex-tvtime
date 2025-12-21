@@ -27,6 +27,8 @@ public class MediaManagerServiceImpl implements MediaManagerService {
 
   @Autowired private TVTimeService tvTimeService;
 
+  @Autowired private DiscordNotificationService discordNotificationService;
+
   @Value("${track-movies:false}")
   private boolean trackMovies;
 
@@ -302,6 +304,7 @@ public class MediaManagerServiceImpl implements MediaManagerService {
             ConsoleColor.GREEN.value,
             user,
             ConsoleColor.NONE.value);
+        discordNotificationService.sendNotification("✅ **" + user + "** has been successfully logged in to TVTime!");
         return;
       } catch (TVTimeException e) {
         log.error(

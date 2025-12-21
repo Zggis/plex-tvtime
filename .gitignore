@@ -37,3 +37,6 @@ out/
 .vscode/
 /drivers/
 /browsers/
+
+### Local Development ###
+docker-compose.dev.yaml

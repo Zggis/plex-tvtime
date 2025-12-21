@@ -17,5 +17,9 @@ logfile:
 track-movies: ${TRACK_MOVIES:false}
 mark-previous-episodes: ${MARK_PREVIOUS_EPISODES:false}
 mark-rewatch-episodes: ${MARK_REWATCH_EPISODES:false}
+discord:
+  webhook-url: ${DISCORD_WEBHOOK_URL:}
+  notify-on-startup: ${DISCORD_NOTIFY_ON_STARTUP:true}
+  host-url: ${DISCORD_HOST_URL:}
 server:
   port: ${SERVER_PORT:8080}
