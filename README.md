@@ -31,6 +31,8 @@ services:
       - PLEX_USERS=plex_user1,plex_user2
       - TRACK_MOVIES=true
       - DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/your_webhook_url
+      # Optional: Set the externally accessible base URL for accurate links in Discord notifications
+      - DISCORD_HOST_URL=http://your-public-host:8080
     volumes:
       - ./logs:/logs
       - ./config:/config
